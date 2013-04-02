@@ -1,3 +1,11 @@
+// This file is part of generic_array, A lightweight generic
+// N-dimensional array library
+//
+// This Source Code Form is subject to the terms of the Mozilla
+// Public License v. 2.0. If a copy of the MPL was not distributed
+// with this file, You can obtain one at http://mozilla.org/MPL/2.0/.
+
+
 #ifndef MULTI_ARRAY_HPP
 #define MULTI_ARRAY_HPP
 
@@ -31,7 +39,7 @@ namespace internal
 
 
 
-  // for syntax sugar
+  // for syntax sugar initialization
   template<typename UserT, typename IteratorT>
   class ListInitializer {
 
@@ -429,11 +437,6 @@ public:
     m_data = mapped;
   }
 
-  /** 
-      Scalar operand assignment.  \todo Need a precondition check on
-      isStorageContiguous when operator, is used. \todo We should do
-      bounds checking, right now we will buffer overrun if the number
-      of initializers in the list is larger than numElements. */
   internal::ListInitializationSwitch<Amaps, UserT*> operator=(UserT const& x)
   {
     return internal::ListInitializationSwitch<Amaps, UserT*>(*this, x);
