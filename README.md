@@ -33,12 +33,12 @@ Check `test.cpp` file to learn how to use it.
 Some comments:
 
 - You can change the numbering order defining the macro variable MA_DEFAULT_MAJOR:
-  #define MA_DEFAULT_MAJOR RowMajor
+  \#define MA_DEFAULT_MAJOR RowMajor
 or 
-  #define MA_DEFAULT_MAJOR ColMajor
+  \#define MA_DEFAULT_MAJOR ColMajor
 before the library include.
 
-- to debug version (with range cheking, etc.) define the macro variable DEBUG;
+- For debug version (with range cheking, etc.) define the macro variable DEBUG;
 
 
 
