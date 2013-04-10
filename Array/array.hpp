@@ -38,6 +38,39 @@ namespace internal
       { internal::CompileTimeError<((expr) != 0)> ERROR_##msg; (void)ERROR_##msg; }
 
 
+// to expand `int i0, int i1, int i2, ... `
+
+#define MA_EXPAND_ARGS1(type_)                          type_ i0
+#define MA_EXPAND_ARGS2(type_)  MA_EXPAND_ARGS1(type_), type_ i1
+#define MA_EXPAND_ARGS3(type_)  MA_EXPAND_ARGS2(type_), type_ i2
+#define MA_EXPAND_ARGS4(type_)  MA_EXPAND_ARGS3(type_), type_ i3
+#define MA_EXPAND_ARGS5(type_)  MA_EXPAND_ARGS4(type_), type_ i4
+#define MA_EXPAND_ARGS6(type_)  MA_EXPAND_ARGS5(type_), type_ i5
+#define MA_EXPAND_ARGS7(type_)  MA_EXPAND_ARGS6(type_), type_ i6
+#define MA_EXPAND_ARGS8(type_)  MA_EXPAND_ARGS7(type_), type_ i7
+#define MA_EXPAND_ARGS9(type_)  MA_EXPAND_ARGS8(type_), type_ i8
+#define MA_EXPAND_ARGS10(type_) MA_EXPAND_ARGS9(type_), type_ i9
+
+#define MA_EXPAND_ARGS_(N, type_) MA_EXPAND_ARGS##N(type_)
+#define MA_EXPAND_ARGS(N, type_) MA_EXPAND_ARGS_(N, type_)
+
+
+// to expand `i0, i1, i2, ...`
+
+#define MA_EXPAND_SEQ1                  i0
+#define MA_EXPAND_SEQ2  MA_EXPAND_SEQ1, i1
+#define MA_EXPAND_SEQ3  MA_EXPAND_SEQ2, i2
+#define MA_EXPAND_SEQ4  MA_EXPAND_SEQ3, i3
+#define MA_EXPAND_SEQ5  MA_EXPAND_SEQ4, i4
+#define MA_EXPAND_SEQ6  MA_EXPAND_SEQ5, i5
+#define MA_EXPAND_SEQ7  MA_EXPAND_SEQ6, i6
+#define MA_EXPAND_SEQ8  MA_EXPAND_SEQ7, i7
+#define MA_EXPAND_SEQ9  MA_EXPAND_SEQ8, i8
+#define MA_EXPAND_SEQ10 MA_EXPAND_SEQ8, i9
+
+#define MA_EXPAND_SEQ_(N) MA_EXPAND_SEQ##N
+#define MA_EXPAND_SEQ(N) MA_EXPAND_SEQ_(N)
+
 
   // for syntax sugar initialization
   template<typename UserT, typename IteratorT>
@@ -47,14 +80,14 @@ namespace internal
     ListInitializer(IteratorT iter)
         : iter_(iter)
     { }
-    
+
     ListInitializer<UserT, IteratorT> operator,(UserT const& x)
     {
       *iter_ = x;
       ++iter_;
       return ListInitializer<UserT, IteratorT>(iter_);
     }
-    
+
   private:
     ListInitializer();
 
@@ -67,13 +100,13 @@ namespace internal
 
   public:
     typedef typename ArrayT::UserT UserT;
-  
+
     ListInitializationSwitch(const ListInitializationSwitch<ArrayT>& lis) : array_(lis.array_), value_(lis.value_)
     {  }
-  
+
     ListInitializationSwitch(ArrayT& array, UserT const& value) : array_(array), value_(value)
     { }
-  
+
     ListInitializer<UserT, IteratorT> operator,(UserT const& x)
     {
       IteratorT iter = array_.data();
@@ -131,16 +164,16 @@ namespace internal
 
 
   template<int Rank, bool isRowMajor>
-  struct IdxCompTraits;
+  struct IdxComputationTraits;
 
   template<int Rank>
-  struct IdxCompTraits<Rank, true>
+  struct IdxComputationTraits<Rank, true>
   {
     typedef RowMajIdxComputer<Rank> type;
   };
 
   template<int Rank>
-  struct IdxCompTraits<Rank, false>
+  struct IdxComputationTraits<Rank, false>
   {
     typedef ColMajIdxComputer<Rank> type;
   };
@@ -182,7 +215,7 @@ namespace internal
   }
 
 #else
-  template<int Rank, typename ...Args>
+  template<int Rank>
   struct BoundCheck
   {
     static void check(...) { }
@@ -261,33 +294,63 @@ public:
   { return *begin(); }
 
 
-  template<class ...Args>
-  reference operator() (Args ...args)
-  {
-    MA_STATIC_CHECK(sizeof...(Args) == Rank, ERROR_NUMBER_OF_ARGUMENTS_DOES_NOT_MATCH_ARRAY_RANK);
-
-    typedef typename internal::IdxCompTraits<Rank, isRowMajor>::type ToRelative;
-
-    int const indices[] = {args...};
-
-    internal::BoundCheck<Rank>::check(THIS->rdims(), indices);
-
-    return THIS->operator[] ( ToRelative::idx(THIS->rdims(), indices) );
+// define call operator
+#define MA_DEF_CALL_OP(n_args_)                                                       \
+  reference operator() (MA_EXPAND_ARGS(n_args_, int))                                 \
+  {                                                                                   \
+    MA_STATIC_CHECK(Rank==n_args_, INVALID_NUMBER_OF_ARGS_IN_CALL_OP);                \
+                                                                                      \
+    int const indices[] = {MA_EXPAND_SEQ(n_args_)};                                   \
+                                                                                      \
+    internal::BoundCheck<Rank>::check(THIS->rdims(), indices);                        \
+                                                                                      \
+    typedef typename internal::IdxComputationTraits<Rank, isRowMajor>::type ToGlobal; \
+                                                                                      \
+    return THIS->operator[] ( ToGlobal::idx(THIS->rdims(), indices) );                \
   }
 
-  template<class ...Args>
-  const_reference operator() (Args ...args) const
-  {
-    MA_STATIC_CHECK(sizeof...(Args) == Rank, ERROR_NUMBER_OF_ARGUMENTS_DOES_NOT_MATCH_ARRAY_RANK);
+  // define call operators
+  MA_DEF_CALL_OP(1)
+  MA_DEF_CALL_OP(2)
+  MA_DEF_CALL_OP(3)
+  MA_DEF_CALL_OP(4)
+  MA_DEF_CALL_OP(5)
+  MA_DEF_CALL_OP(6)
+  MA_DEF_CALL_OP(7)
+  MA_DEF_CALL_OP(8)
+  MA_DEF_CALL_OP(9)
+  MA_DEF_CALL_OP(10)
+#undef MA_DEF_CALL_OP
 
-    typedef typename internal::IdxCompTraits<Rank, isRowMajor>::type ToRelative;
 
-    int const indices[] = {args...};
+// define const call operator
+#define MA_DEF_CONST_CALL_OP(n_args_)                                                 \
+  const_reference operator() (MA_EXPAND_ARGS(n_args_, int)) const                     \
+  {                                                                                   \
+    MA_STATIC_CHECK(Rank==n_args_, INVALID_NUMBER_OF_ARGS_IN_CALL_OP);                \
+                                                                                      \
+    int const indices[] = {MA_EXPAND_SEQ(n_args_)};                                   \
+                                                                                      \
+    internal::BoundCheck<Rank>::check(THIS->rdims(), indices);                        \
+                                                                                      \
+    typedef typename internal::IdxComputationTraits<Rank, isRowMajor>::type ToGlobal; \
+                                                                                      \
+    return THIS->operator[] ( ToGlobal::idx(THIS->rdims(), indices) );                \
+  };
 
-    internal::BoundCheck<Rank>::check(THIS->rdims(), indices);
+  // define call operators
+  MA_DEF_CONST_CALL_OP(1)
+  MA_DEF_CONST_CALL_OP(2)
+  MA_DEF_CONST_CALL_OP(3)
+  MA_DEF_CONST_CALL_OP(4)
+  MA_DEF_CONST_CALL_OP(5)
+  MA_DEF_CONST_CALL_OP(6)
+  MA_DEF_CONST_CALL_OP(7)
+  MA_DEF_CONST_CALL_OP(8)
+  MA_DEF_CONST_CALL_OP(9)
+  MA_DEF_CONST_CALL_OP(10)
+#undef MA_DEF_CONST_CALL_OP
 
-    return THIS->operator[] ( ToRelative::idx(THIS->rdims(), indices) );
-  }
 
   int maxDim() const
   {
@@ -310,7 +373,7 @@ public:
 template<typename P_type, int P_rank, Options P_opts = MA_DEFAULT_MAJOR, typename P_MemBlock = std::vector<P_type> >
 class Array : public P_MemBlock, public ArrayBase<Array<P_type,P_rank,P_opts,P_MemBlock> >
 {
-  
+
   typedef P_MemBlock       Base1;
   typedef ArrayBase<Array> Base2;
 
@@ -336,19 +399,32 @@ private:
 public:
 
   Array() : Base1(), Base2(), m_rdims() {};
-  Array(Array const& ) = default;
-  Array& operator= (Array const&) = default;
+  //Array(Array const& ) = default;
+  //Array& operator= (Array const&) = default;
 
   internal::ListInitializationSwitch<Array, UserT*> operator=(UserT const& x)
   {
     return internal::ListInitializationSwitch<Array, UserT*>(*this, x);
   }
 
-  template<class ...Args>
-  Array(int i0, Args...args)
-  {
-    reshape(i0, args...);
+#define MA_ARRAY_CONSTRUCTOR(n_args) \
+  Array(MA_EXPAND_ARGS(n_args, int)) \
+  {                                  \
+    reshape(MA_EXPAND_SEQ(n_args));  \
   }
+
+  MA_ARRAY_CONSTRUCTOR(1)
+  MA_ARRAY_CONSTRUCTOR(2)
+  MA_ARRAY_CONSTRUCTOR(3)
+  MA_ARRAY_CONSTRUCTOR(4)
+  MA_ARRAY_CONSTRUCTOR(5)
+  MA_ARRAY_CONSTRUCTOR(6)
+  MA_ARRAY_CONSTRUCTOR(7)
+  MA_ARRAY_CONSTRUCTOR(8)
+  MA_ARRAY_CONSTRUCTOR(9)
+  MA_ARRAY_CONSTRUCTOR(10)
+#undef MA_ARRAY_CONSTRUCTOR
+
 
   int rank() const
   { return Rank; }
@@ -361,22 +437,36 @@ public:
   int size() const
   { return Base1::size(); }
 
-  template<class ...Args>
-  void reshape(int i0, Args...args)
-  {
-    MA_STATIC_CHECK(sizeof...(Args)+1 == Rank, TOO_FEW_ARGUMENTS_IN_RESHAPE);
-    int const new_dims[] = { i0, args... };
-
-    int new_size = 1;
-    for (int i = 0; i < Rank; ++i)
-    {
-      internal::assertTrue(new_dims[i] > 0, "**ERROR**: Array<>: dimension must be greater than 0");
-      m_rdims[i] = new_dims[i];
-      new_size *= new_dims[i];
-    }
-
-    resize(new_size);
+#define MA_RESHAPE(n_args)                                                                            \
+  void reshape(MA_EXPAND_ARGS(n_args, int))                                                           \
+  {                                                                                                   \
+    MA_STATIC_CHECK(n_args == Rank, TOO_FEW_ARGUMENTS_IN_RESHAPE);                                    \
+    int const new_dims[] = { MA_EXPAND_SEQ(n_args) };                                                 \
+                                                                                                      \
+    int new_size = 1;                                                                                 \
+    for (int i = 0; i < Rank; ++i)                                                                    \
+    {                                                                                                 \
+      internal::assertTrue(new_dims[i] > 0, "**ERROR**: Array<>: dimension must be greater than 0");  \
+      m_rdims[i] = new_dims[i];                                                                       \
+      new_size *= new_dims[i];                                                                        \
+    }                                                                                                 \
+                                                                                                      \
+    resize(new_size);                                                                                 \
   }
+
+  // define `reshape`
+  MA_RESHAPE(1)
+  MA_RESHAPE(2)
+  MA_RESHAPE(3)
+  MA_RESHAPE(4)
+  MA_RESHAPE(5)
+  MA_RESHAPE(6)
+  MA_RESHAPE(7)
+  MA_RESHAPE(8)
+  MA_RESHAPE(9)
+  MA_RESHAPE(10)
+#undef MA_RESHAPE
+
 
 protected:
 
@@ -412,30 +502,42 @@ private:
   int    m_size;
   int    m_rdims[Rank];
 
+  Amaps();
 public:
+  //Amaps(Amaps const& ) = default;
+  //Amaps& operator= (Amaps const&) = default;
 
-  Amaps() = delete;
-  Amaps(Amaps const& ) = default;
-  Amaps& operator= (Amaps const&) = default;
-
-  template<class ...Args>
-  Amaps(UserT* mapped, Args...args)
-  {
-    MA_STATIC_CHECK(sizeof...(Args) == Rank, TOO_FEW_ARGUMENTS_IN_AMAPS_CONSTRUCTOR);
-    
-    int const new_dims[] = { args... };
-    m_size = 1;
-    for (int i = 0; i < Rank; ++i)
-    {
-      internal::assertTrue(new_dims[i] > 0, "**ERROR**: Amaps<>: dimension must be greater than 0");
-      m_rdims[i] = new_dims[i];
-      m_size *= new_dims[i];
-    }
-    
-    if (mapped == NULL)
-      throw "**ERROR**: Amaps<>: null pointer";
-    m_data = mapped;
+#define MA_AMAPS_CONSTRUCTOR(n_args)                                                                 \
+  Amaps(UserT* mapped, MA_EXPAND_ARGS(n_args, int))                                                  \
+  {                                                                                                  \
+    MA_STATIC_CHECK(n_args == Rank, TOO_FEW_ARGUMENTS_IN_AMAPS_CONSTRUCTOR);                         \
+                                                                                                     \
+    int const new_dims[] = { MA_EXPAND_SEQ(n_args) };                                                \
+    m_size = 1;                                                                                      \
+    for (int i = 0; i < Rank; ++i)                                                                   \
+    {                                                                                                \
+      internal::assertTrue(new_dims[i] > 0, "**ERROR**: Amaps<>: dimension must be greater than 0"); \
+      m_rdims[i] = new_dims[i];                                                                      \
+      m_size *= new_dims[i];                                                                         \
+    }                                                                                                \
+                                                                                                     \
+    if (mapped == NULL)                                                                              \
+      throw std::runtime_error("**ERROR**: Amaps<>: null pointer");                                  \
+    m_data = mapped;                                                                                 \
   }
+
+  MA_AMAPS_CONSTRUCTOR( 1)
+  MA_AMAPS_CONSTRUCTOR( 2)
+  MA_AMAPS_CONSTRUCTOR( 3)
+  MA_AMAPS_CONSTRUCTOR( 4)
+  MA_AMAPS_CONSTRUCTOR( 5)
+  MA_AMAPS_CONSTRUCTOR( 6)
+  MA_AMAPS_CONSTRUCTOR( 7)
+  MA_AMAPS_CONSTRUCTOR( 8)
+  MA_AMAPS_CONSTRUCTOR( 9)
+  MA_AMAPS_CONSTRUCTOR(10)
+#undef MA_AMAPS_CONSTRUCTOR
+
 
   internal::ListInitializationSwitch<Amaps, UserT*> operator=(UserT const& x)
   {
@@ -450,7 +552,7 @@ public:
     internal::assertTrue(r < Rank, "**ERROR**: Amaps<>: invalid index in function `size()`");
     return m_rdims[r];
   }
-  
+
   int size() const
   { return m_size; }
 
@@ -462,7 +564,7 @@ public:
 
   UserT& operator[] (int i)
   { return m_data[i]; }
-  
+
   UserT const& operator[] (int i) const
   { return m_data[i]; }
 

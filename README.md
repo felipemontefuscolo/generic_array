@@ -5,21 +5,14 @@ A lightweight generic N-dimensional array library
 
 
 This library is only a single header file (array.hpp) written
-in C++. It uses some features of the new standard C++11 like
-variadic templates and deleted/default functions. However, I
-was able to compile this lib with gcc v4.4 and v4.7 without
-any compiler flags (specially the -std=c++0x) at the price of some
-annoying warnings. It's a good thing since you can link your
-code with another libraries compiled in the old standard without
-breaking ABI. If you use -std=c++0x flag to compile, all warnings
-go away, but you only can link to another libraries in C++11
-standard.
+in C++. Although it is supposed to be generic, it supports
+at most 10-dimensional arrays. However, there is c++11 version
+which supports any rank.
 
-This library is only tested with gcc compiler.
 
 Features:
 
-- generic array dimension;
+- generic array dimension (at most 10 for c++03 standard);
 - can be chosen row or col major order;
 - there are wrappers for pre-existing datas;
 

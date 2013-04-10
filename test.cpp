@@ -12,6 +12,8 @@ using namespace marray;
 
 void test_constructors()
 {
+  printf("test_constructors() ... ");
+  
   Array<double, 3>  A;
   Array<double, 1>  B(5);
   Array<double, 2>  C(2,3);
@@ -86,10 +88,12 @@ void test_constructors()
   assert(J.dim(7) == 3);
   assert(J.dim(8) == 4);
 
+  printf("OK\n");
 }
 
 void test_RowMajor()
 {
+  printf("test_RowMajor() ... ");
   
   Array<double, 3>  A(2,3,4);  // RowMajor by default
   
@@ -103,10 +107,13 @@ void test_RowMajor()
     for (int j = 0; j < A.dim(1); ++j)
       for (int k = 0; k < A.dim(2); ++k)
         assert( A(i,j,k) ==  accum++);
+  
+  printf("OK\n");
 }
 
 void test_ColMajor()
 {
+  printf("test_ColMajor() ... ");
   
   Array<double, 3, ColMajor> A(2,3,4);
  // Array<double, 3, ColMajor> B(2,3,4);
@@ -120,11 +127,15 @@ void test_ColMajor()
   for (int k = 0; k < A.dim(2); ++k)
     for (int j = 0; j < A.dim(1); ++j)
       for (int i = 0; i < A.dim(0); ++i)
-        assert( A(i,j,k) ==  accum++);  
+        assert( A(i,j,k) ==  accum++);
+  
+  printf("OK\n");
 }
 
 void test_InitializerRowM()
 {
+  printf("test_InitializerRowM() ... ");
+  
   Array<double, 3> A(2,3,4);
   
   A = 0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23;
@@ -134,11 +145,14 @@ void test_InitializerRowM()
     for (int j = 0; j < A.dim(1); ++j)
       for (int k = 0; k < A.dim(2); ++k)
         assert( A(i,j,k) ==  accum++);  
-    
+  
+  printf("OK\n");
 }
 
 void test_InitializerColM()
 {
+  printf("test_InitializerColM() ... ");
+  
   Array<double, 3, ColMajor> B(2,3,4);
   
   B = 0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23;
@@ -149,10 +163,13 @@ void test_InitializerColM()
       for (int i = 0; i < B.dim(0); ++i)
         assert( B(i,j,k) ==  accum++);  
   
+  printf("OK\n");
 }
 
 void test_CopyConstructor()
 {
+  printf("test_CopyConstructor() ... ");
+  
   Array<double, 3> B(2,3,4);
   
   B = 0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23;
@@ -164,10 +181,14 @@ void test_CopyConstructor()
     for (int j = 0; j < A.dim(1); ++j)
       for (int k = 0; k < A.dim(2); ++k)
         assert( A(i,j,k) ==  accum++);    
+  
+  printf("OK\n");
 }
 
 void test_Assign()
 {
+  printf("test_Assign() ... ");
+  
   Array<double, 3> B(2,3,4);
   
   B = 0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23;
@@ -190,10 +211,13 @@ void test_Assign()
       for (int k = 0; k < B.dim(2); ++k)
         assert( B(i,j,k) > 0  );  
   
+  printf("OK\n");
 }
 
 void test_Reshape()
 {
+  printf("test_Reshape() ... ");
+  
   Array<double, 3> B(2,3,4);
   
   B = 0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23;
@@ -229,11 +253,13 @@ void test_Reshape()
   for (int i = 0; i < B.size(); ++i)
     assert(B[i] == i);
   
-  
+  printf("OK\n");
 }
 
 void test_Amaps()
 {
+  printf("test_Amaps() ... ");
+  
   Array<double, 3> B(2,3,4);
   
   B = 0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23;
@@ -291,6 +317,7 @@ void test_Amaps()
   for (int i = 0; i < B.size(); ++i)
     assert( B[i] == -1 );
   
+  printf("OK\n");
 }
 
 int main()
