@@ -242,7 +242,16 @@ namespace internal
 
 
 
-
+//              db                                                     88888888ba                                   
+//             d88b                                                    88      "8b                                  
+//            d8'`8b                                                   88      ,8P                                  
+//           d8'  `8b     8b,dPPYba, 8b,dPPYba, ,adPPYYba, 8b       d8 88aaaaaa8P' ,adPPYYba, ,adPPYba,  ,adPPYba,  
+//          d8YaaaaY8b    88P'   "Y8 88P'   "Y8 ""     `Y8 `8b     d8' 88""""""8b, ""     `Y8 I8[    "" a8P_____88  
+//         d8""""""""8b   88         88         ,adPPPPP88  `8b   d8'  88      `8b ,adPPPPP88  `"Y8ba,  8PP"""""""  
+//        d8'        `8b  88         88         88,    ,88   `8b,d8'   88      a8P 88,    ,88 aa    ]8I "8b,   ,aa  
+//       d8'          `8b 88         88         `"8bbdP"Y8     Y88'    88888888P"  `"8bbdP"Y8 `"YbbdP"'  `"Ybbd8"'  
+//                                                             d8'                                                  
+//                                                            d8'       
 
 template<typename Derived>
 class ArrayBase
@@ -370,6 +379,18 @@ public:
 #undef CONST_THIS
 };
 
+
+//              db                                                      
+//             d88b                                                     
+//            d8'`8b                                                    
+//           d8'  `8b     8b,dPPYba, 8b,dPPYba, ,adPPYYba, 8b       d8  
+//          d8YaaaaY8b    88P'   "Y8 88P'   "Y8 ""     `Y8 `8b     d8'  
+//         d8""""""""8b   88         88         ,adPPPPP88  `8b   d8'   
+//        d8'        `8b  88         88         88,    ,88   `8b,d8'    
+//       d8'          `8b 88         88         `"8bbdP"Y8     Y88'     
+//                                                             d8'      
+//                                                            d8'    
+
 template<typename P_type, int P_rank, Options P_opts = MA_DEFAULT_MAJOR, typename P_MemBlock = std::vector<P_type> >
 class Array : public P_MemBlock, public ArrayBase<Array<P_type,P_rank,P_opts,P_MemBlock> >
 {
@@ -479,6 +500,17 @@ protected:
 
 };
 
+
+//               db                                                             
+//              d88b                                                            
+//             d8'`8b                                                           
+//            d8'  `8b     88,dPYba,,adPYba,  ,adPPYYba, 8b,dPPYba,  ,adPPYba,  
+//           d8YaaaaY8b    88P'   "88"    "8a ""     `Y8 88P'    "8a I8[    ""  
+//          d8""""""""8b   88      88      88 ,adPPPPP88 88       d8  `"Y8ba,   
+//         d8'        `8b  88      88      88 88,    ,88 88b,   ,a8" aa    ]8I  
+//        d8'          `8b 88      88      88 `"8bbdP"Y8 88`YbbdP"'  `"YbbdP"'  
+//                                                       88                     
+//                                                       88  
 
 template<typename P_type, int P_rank, Options P_opts = MA_DEFAULT_MAJOR >
 class Amaps : public ArrayBase<Amaps<P_type,P_rank,P_opts> >
