@@ -278,29 +278,29 @@ public:
   typedef          UserT const*                 const_pointer;
 
 
-  iterator begin()
-  { return THIS->data(); }
-
-  const_iterator begin() const
-  { return THIS->data(); }
-
-  iterator end()
-  { return THIS->data() + THIS->size(); }
-
-  const_iterator end() const
-  { return THIS->data() + THIS->size(); }
-
-  reference back()
-  { return *(--end()); }
-
-  const_reference back() const
-  { return *(--end()); }
-
-  reference front()
-  { return *begin(); }
-
-  const_reference front() const
-  { return *begin(); }
+//  iterator begin()
+//  { return THIS->data(); }
+//
+//  const_iterator begin() const
+//  { return THIS->data(); }
+//
+//  iterator end()
+//  { return THIS->data() + THIS->size(); }
+//
+//  const_iterator end() const
+//  { return THIS->data() + THIS->size(); }
+//
+//  reference back()
+//  { return *(--end()); }
+//
+//  const_reference back() const
+//  { return *(--end()); }
+//
+//  reference front()
+//  { return *begin(); }
+//
+//  const_reference front() const
+//  { return *begin(); }
 
 
 // define call operator
