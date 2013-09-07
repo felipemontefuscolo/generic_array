@@ -340,11 +340,11 @@ public:
                                                                                       \
     int const indices[] = {MA_EXPAND_SEQ(n_args_)};                                   \
                                                                                       \
-    internal::BoundCheck<Rank>::check(THIS->rdims(), indices);                        \
+    internal::BoundCheck<Rank>::check(CONST_THIS->rdims(), indices);                        \
                                                                                       \
     typedef typename internal::IdxComputationTraits<Rank, isRowMajor>::type ToGlobal; \
                                                                                       \
-    return THIS->operator[] ( ToGlobal::idx(THIS->rdims(), indices) );                \
+    return CONST_THIS->operator[] ( ToGlobal::idx(CONST_THIS->rdims(), indices) );                \
   };
 
   // define call operators
