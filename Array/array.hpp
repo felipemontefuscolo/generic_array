@@ -11,12 +11,23 @@
 
 #include <vector>
 #include <stdexcept>
+#include <tr1/type_traits>
 
 namespace marray {
 
 #ifndef MA_DEFAULT_MAJOR
 #define MA_DEFAULT_MAJOR RowMajor
 #endif
+
+namespace marray_internal {
+	template<bool, typename T = void>
+	struct EnableIf {};
+
+	template<typename T>
+	struct EnableIf<true, T> {
+	  typedef T type;
+	};
+}
 
 
 enum Options {
@@ -95,21 +106,21 @@ namespace internal
     IteratorT iter_;
   };
 
-  template<typename ArrayT, typename IteratorT = typename ArrayT::UserT*>
+  //template<typename ArrayT, typename IteratorT = typename ArrayT::UserT*>
+  template<typename UserT, typename IteratorT>
   class ListInitializationSwitch {
 
   public:
-    typedef typename ArrayT::UserT UserT;
 
-    ListInitializationSwitch(const ListInitializationSwitch<ArrayT>& lis) : array_(lis.array_), value_(lis.value_)
+    ListInitializationSwitch(const ListInitializationSwitch<UserT,IteratorT>& lis) : array_(lis.array_), value_(lis.value_)
     {  }
 
-    ListInitializationSwitch(ArrayT& array, UserT const& value) : array_(array), value_(value)
+    ListInitializationSwitch(UserT* array, UserT const& value) : array_(array), value_(value)
     { }
 
     ListInitializer<UserT, IteratorT> operator,(UserT const& x)
     {
-      IteratorT iter = array_.data();
+      IteratorT iter = array_;
       *iter = value_;
       ++iter;
       *iter = x;
@@ -121,7 +132,7 @@ namespace internal
     ListInitializationSwitch();
 
   protected:
-    ArrayT& array_;
+    UserT* array_;
     UserT value_;
   };
 
@@ -242,16 +253,16 @@ namespace internal
 
 
 
-//              db                                                     88888888ba                                   
-//             d88b                                                    88      "8b                                  
-//            d8'`8b                                                   88      ,8P                                  
-//           d8'  `8b     8b,dPPYba, 8b,dPPYba, ,adPPYYba, 8b       d8 88aaaaaa8P' ,adPPYYba, ,adPPYba,  ,adPPYba,  
-//          d8YaaaaY8b    88P'   "Y8 88P'   "Y8 ""     `Y8 `8b     d8' 88""""""8b, ""     `Y8 I8[    "" a8P_____88  
-//         d8""""""""8b   88         88         ,adPPPPP88  `8b   d8'  88      `8b ,adPPPPP88  `"Y8ba,  8PP"""""""  
-//        d8'        `8b  88         88         88,    ,88   `8b,d8'   88      a8P 88,    ,88 aa    ]8I "8b,   ,aa  
-//       d8'          `8b 88         88         `"8bbdP"Y8     Y88'    88888888P"  `"8bbdP"Y8 `"YbbdP"'  `"Ybbd8"'  
-//                                                             d8'                                                  
-//                                                            d8'       
+//              db                                                     88888888ba
+//             d88b                                                    88      "8b
+//            d8'`8b                                                   88      ,8P
+//           d8'  `8b     8b,dPPYba, 8b,dPPYba, ,adPPYYba, 8b       d8 88aaaaaa8P' ,adPPYYba, ,adPPYba,  ,adPPYba,
+//          d8YaaaaY8b    88P'   "Y8 88P'   "Y8 ""     `Y8 `8b     d8' 88""""""8b, ""     `Y8 I8[    "" a8P_____88
+//         d8""""""""8b   88         88         ,adPPPPP88  `8b   d8'  88      `8b ,adPPPPP88  `"Y8ba,  8PP"""""""
+//        d8'        `8b  88         88         88,    ,88   `8b,d8'   88      a8P 88,    ,88 aa    ]8I "8b,   ,aa
+//       d8'          `8b 88         88         `"8bbdP"Y8     Y88'    88888888P"  `"8bbdP"Y8 `"YbbdP"'  `"Ybbd8"'
+//                                                             d8'
+//                                                            d8'
 
 template<typename Derived>
 class ArrayBase
@@ -265,7 +276,7 @@ class ArrayBase
   typedef typename internal::Traits<Derived>::UserT UserT;
   static const int Rank = internal::Traits<Derived>::Rank;
   static const bool isRowMajor = internal::Traits<Derived>::isRowMajor;
-  
+
 
 public:
 
@@ -278,30 +289,6 @@ public:
   typedef          UserT*                       pointer;
   typedef          UserT const*                 const_pointer;
 
-
-  //iterator begin()
-  //{ return THIS->data(); }
-  //
-  //const_iterator begin() const
-  //{ return CONST_THIS->data(); }
-  //
-  //iterator end()
-  //{ return THIS->data() + THIS->size(); }
-  //
-  //const_iterator end() const
-  //{ return CONST_THIS->data() + THIS->size(); }
-  //
-  //reference back()
-  //{ return *(--end()); }
-  //
-  //const_reference back() const
-  //{ return *(--end()); }
-  //
-  //reference front()
-  //{ return *begin(); }
-  //
-  //const_reference front() const
-  //{ return *begin(); }
 
 
 // define call operator
@@ -428,15 +415,6 @@ public:
 
 
 
-
-
-
-
-
-
-
-
-
   int maxDim() const
   {
     int m = 0;
@@ -456,28 +434,28 @@ public:
 };
 
 
-//              db                                                      
-//             d88b                                                     
-//            d8'`8b                                                    
-//           d8'  `8b     8b,dPPYba, 8b,dPPYba, ,adPPYYba, 8b       d8  
-//          d8YaaaaY8b    88P'   "Y8 88P'   "Y8 ""     `Y8 `8b     d8'  
-//         d8""""""""8b   88         88         ,adPPPPP88  `8b   d8'   
-//        d8'        `8b  88         88         88,    ,88   `8b,d8'    
-//       d8'          `8b 88         88         `"8bbdP"Y8     Y88'     
-//                                                             d8'      
-//                                                            d8'    
+//              db
+//             d88b
+//            d8'`8b
+//           d8'  `8b     8b,dPPYba, 8b,dPPYba, ,adPPYYba, 8b       d8
+//          d8YaaaaY8b    88P'   "Y8 88P'   "Y8 ""     `Y8 `8b     d8'
+//         d8""""""""8b   88         88         ,adPPPPP88  `8b   d8'
+//        d8'        `8b  88         88         88,    ,88   `8b,d8'
+//       d8'          `8b 88         88         `"8bbdP"Y8     Y88'
+//                                                             d8'
+//                                                            d8'
 
 template<typename P_type, int P_rank, Options P_opts = MA_DEFAULT_MAJOR, typename P_MemBlock = std::vector<P_type> >
-class Array : public P_MemBlock, public ArrayBase<Array<P_type,P_rank,P_opts,P_MemBlock> >
+class GenericN : public P_MemBlock, public ArrayBase<GenericN<P_type,P_rank,P_opts,P_MemBlock> >
 {
-
+protected:
   typedef P_MemBlock       Base1;
-  typedef ArrayBase<Array> Base2;
+  typedef ArrayBase<GenericN> Base2;
 
   typedef typename Base2::reference reference;
   typedef typename Base2::const_reference const_reference;
 
-  friend class ArrayBase<Array>;
+  friend class ArrayBase<GenericN>;
 
 //  using P_MemBlock::m_data;
 
@@ -487,41 +465,17 @@ public:
   static const int Rank = P_rank;
   static const bool isRowMajor = P_opts & RowMajor;
 
+protected:
+  int m_rdims[Rank];   // size of each rank
+
+  // user can't use this
   using Base1::resize;
-
-private:
-    int m_rdims[Rank];   // size of each rank
-
 
 public:
 
-  Array() : Base1(), Base2(), m_rdims() {};
+  GenericN() : Base1(), Base2(), m_rdims() {};
   //Array(Array const& ) = default;
-  //Array& operator= (Array const&) = default;
-
-  internal::ListInitializationSwitch<Array, UserT*> operator=(UserT const& x)
-  {
-    return internal::ListInitializationSwitch<Array, UserT*>(*this, x);
-  }
-
-#define MA_ARRAY_CONSTRUCTOR(n_args) \
-  Array(MA_EXPAND_ARGS(n_args, int)) \
-  {                                  \
-    reshape(MA_EXPAND_SEQ(n_args));  \
-  }
-
-  MA_ARRAY_CONSTRUCTOR(1)
-  MA_ARRAY_CONSTRUCTOR(2)
-  MA_ARRAY_CONSTRUCTOR(3)
-  MA_ARRAY_CONSTRUCTOR(4)
-  MA_ARRAY_CONSTRUCTOR(5)
-  MA_ARRAY_CONSTRUCTOR(6)
-  MA_ARRAY_CONSTRUCTOR(7)
-  MA_ARRAY_CONSTRUCTOR(8)
-  MA_ARRAY_CONSTRUCTOR(9)
-  MA_ARRAY_CONSTRUCTOR(10)
-#undef MA_ARRAY_CONSTRUCTOR
-
+  //Array& operator<< (Array const&) = default;
 
   int rank() const
   { return Rank; }
@@ -533,37 +487,6 @@ public:
   }
   int size() const
   { return Base1::size(); }
-
-#define MA_RESHAPE(n_args)                                                                            \
-  void reshape(MA_EXPAND_ARGS(n_args, int))                                                           \
-  {                                                                                                   \
-    MA_STATIC_CHECK(n_args == Rank, TOO_FEW_ARGUMENTS_IN_RESHAPE);                                    \
-    int const new_dims[] = { MA_EXPAND_SEQ(n_args) };                                                 \
-                                                                                                      \
-    int new_size = 1;                                                                                 \
-    for (int i = 0; i < Rank; ++i)                                                                    \
-    {                                                                                                 \
-      internal::assertTrue(new_dims[i] > 0, "**ERROR**: Array<>: dimension must be greater than 0");  \
-      m_rdims[i] = new_dims[i];                                                                       \
-      new_size *= new_dims[i];                                                                        \
-    }                                                                                                 \
-                                                                                                      \
-    resize(new_size);                                                                                 \
-  }
-
-  // define `reshape`
-  MA_RESHAPE(1)
-  MA_RESHAPE(2)
-  MA_RESHAPE(3)
-  MA_RESHAPE(4)
-  MA_RESHAPE(5)
-  MA_RESHAPE(6)
-  MA_RESHAPE(7)
-  MA_RESHAPE(8)
-  MA_RESHAPE(9)
-  MA_RESHAPE(10)
-#undef MA_RESHAPE
-
 
 protected:
 
@@ -577,16 +500,87 @@ protected:
 };
 
 
-//               db                                                             
-//              d88b                                                            
-//             d8'`8b                                                           
-//            d8'  `8b     88,dPYba,,adPYba,  ,adPPYYba, 8b,dPPYba,  ,adPPYba,  
-//           d8YaaaaY8b    88P'   "88"    "8a ""     `Y8 88P'    "8a I8[    ""  
-//          d8""""""""8b   88      88      88 ,adPPPPP88 88       d8  `"Y8ba,   
-//         d8'        `8b  88      88      88 88,    ,88 88b,   ,a8" aa    ]8I  
-//        d8'          `8b 88      88      88 `"8bbdP"Y8 88`YbbdP"'  `"YbbdP"'  
-//                                                       88                     
-//                                                       88  
+
+
+template<typename P_type, int P_rank, Options P_opts = MA_DEFAULT_MAJOR, typename P_MemBlock = std::vector<P_type> >
+class Array : public GenericN<P_type,P_rank,P_opts,P_MemBlock>
+{
+};
+
+
+#define IMPLEMENT_ARRAY(P_rank)                                                                          \
+template<typename P_type, Options P_opts , typename P_MemBlock  >                                        \
+class Array<P_type,P_rank,P_opts,P_MemBlock> : public GenericN<P_type,P_rank,P_opts,P_MemBlock>          \
+{                                                                                                        \
+  typedef GenericN<P_type,P_rank,P_opts,P_MemBlock> Base0;                                               \
+                                                                                                         \
+  typedef typename Base0::Base1  Base1;                                                                  \
+  typedef typename Base0::Base2  Base2;                                                                  \
+                                                                                                         \
+  typedef typename Base2::reference reference;                                                           \
+  typedef typename Base2::const_reference const_reference;                                               \
+                                                                                                         \
+                                                                                                         \
+public:                                                                                                  \
+                                                                                                         \
+  typedef P_type UserT;                                                                                  \
+  static const int Rank = P_rank;                                                                        \
+  static const bool isRowMajor = P_opts & RowMajor;                                                      \
+                                                                                                         \
+  Array() {};                                                                                            \
+                                                                                                         \
+  internal::ListInitializationSwitch<UserT, UserT*> operator<<(const_reference x)                        \
+  {                                                                                                      \
+    return internal::ListInitializationSwitch<UserT, UserT*>(this->data(), x);                           \
+  }                                                                                                      \
+                                                                                                         \
+  Array(MA_EXPAND_ARGS(P_rank, int), UserT val = UserT())                                                \
+  {                                                                                                      \
+    reshape(MA_EXPAND_SEQ(P_rank), val);                                                                 \
+  }                                                                                                      \
+                                                                                                         \
+  void reshape(MA_EXPAND_ARGS(P_rank, int), UserT val = UserT())                                         \
+  {                                                                                                      \
+    MA_STATIC_CHECK(P_rank == Rank, TOO_FEW_ARGUMENTS_IN_RESHAPE);                                       \
+    int const new_dims[] = { MA_EXPAND_SEQ(P_rank) };                                                    \
+                                                                                                         \
+    int new_size = 1;                                                                                    \
+    for (int i = 0; i < Rank; ++i)                                                                       \
+    {                                                                                                    \
+      internal::assertTrue(new_dims[i] > 0, "**ERROR**: Array<>: dimension must be greater than 0");     \
+      Base0::m_rdims[i] = new_dims[i];                                                                   \
+      new_size *= new_dims[i];                                                                           \
+    }                                                                                                    \
+                                                                                                         \
+    resize(new_size, val);                                                                               \
+  }                                                                                                      \
+                                                                                                         \
+};
+
+IMPLEMENT_ARRAY(1)
+IMPLEMENT_ARRAY(2)
+IMPLEMENT_ARRAY(3)
+IMPLEMENT_ARRAY(4)
+IMPLEMENT_ARRAY(5)
+IMPLEMENT_ARRAY(6)
+IMPLEMENT_ARRAY(7)
+IMPLEMENT_ARRAY(8)
+IMPLEMENT_ARRAY(9)
+IMPLEMENT_ARRAY(10)
+
+#undef IMPLEMENT_ARRAY
+
+
+//               db
+//              d88b
+//             d8'`8b
+//            d8'  `8b     88,dPYba,,adPYba,  ,adPPYYba, 8b,dPPYba,  ,adPPYba,
+//           d8YaaaaY8b    88P'   "88"    "8a ""     `Y8 88P'    "8a I8[    ""
+//          d8""""""""8b   88      88      88 ,adPPPPP88 88       d8  `"Y8ba,
+//         d8'        `8b  88      88      88 88,    ,88 88b,   ,a8" aa    ]8I
+//        d8'          `8b 88      88      88 `"8bbdP"Y8 88`YbbdP"'  `"YbbdP"'
+//                                                       88
+//                                                       88
 
 template<typename P_type, int P_rank, Options P_opts = MA_DEFAULT_MAJOR >
 class Amaps : public ArrayBase<Amaps<P_type,P_rank,P_opts> >
@@ -613,7 +607,12 @@ private:
   Amaps();
 public:
   //Amaps(Amaps const& ) = default;
-  //Amaps& operator= (Amaps const&) = default;
+  //Amaps& operator<< (Amaps const&) = default;
+
+  internal::ListInitializationSwitch<UserT, UserT*> operator<<(const_reference x)
+  {
+    return internal::ListInitializationSwitch<UserT, UserT*>(this->data(), x);
+  }
 
 #define MA_AMAPS_CONSTRUCTOR(n_args)                                                                 \
   Amaps(UserT* mapped, MA_EXPAND_ARGS(n_args, int))                                                  \
@@ -647,10 +646,10 @@ public:
 #undef MA_AMAPS_CONSTRUCTOR
 
 
-  internal::ListInitializationSwitch<Amaps, UserT*> operator=(UserT const& x)
-  {
-    return internal::ListInitializationSwitch<Amaps, UserT*>(*this, x);
-  }
+  //internal::ListInitializationSwitch<Amaps, UserT*> operator<<(UserT const& x)
+  //{
+  //  return internal::ListInitializationSwitch<Amaps, UserT*>(*this, x);
+  //}
 
   int rank() const
   { return Rank; }
@@ -690,7 +689,7 @@ namespace internal
 {
 
 template<class T, int A, Options O, class M>
-struct Traits<Array<T,A,O,M> > {
+struct Traits<GenericN<T,A,O,M> > {
   typedef T UserT;
   static const int Rank = A;
   static const bool isRowMajor = O & RowMajor;
@@ -712,5 +711,13 @@ struct Traits<Amaps<T,A,O> > {
 
 
 } // endnamespace
+
+
+
+
+
+
+
+
 
 #endif

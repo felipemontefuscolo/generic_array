@@ -22,7 +22,7 @@ void test_constructors()
   Array<double, 5>  F(2,3,4,3,2);
   Array<double, 6>  G(2,3,4,3,2,1);
   Array<double, 7>  H(2,3,4,3,2,1,2);
-  Array<double, 8>  I(2,3,4,3,2,1,2,3);
+  Array<double, 8>  I(2,3,4,3,2,1,2,3, /*value*/ 1.125);
   Array<double, 9>  J(2,3,4,3,2,1,2,3,4);
   
   assert( A.size() == 0    );
@@ -35,6 +35,9 @@ void test_constructors()
   assert( H.size() == 288  );
   assert( I.size() == 864  );
   assert( J.size() == 3456 );
+
+  for (int i=0; i<I.size(); ++i)
+	assert( I.at(i) == 1.125 );
 
 #ifdef DEBUG
   // must throw
@@ -71,7 +74,91 @@ void test_constructors()
   LOOP_TEST(F)
   LOOP_TEST(G)
   LOOP_TEST(H)
-  LOOP_TEST(I)
+  //LOOP_TEST(I)
+  LOOP_TEST(J)
+
+  assert(A.dim(0) == 0);
+  assert(A.dim(1) == 0);
+  assert(A.dim(2) == 0);
+
+  assert(J.dim(0) == 2);
+  assert(J.dim(1) == 3);
+  assert(J.dim(2) == 4);
+  assert(J.dim(3) == 3);
+  assert(J.dim(4) == 2);
+  assert(J.dim(5) == 1);
+  assert(J.dim(6) == 2);
+  assert(J.dim(7) == 3);
+  assert(J.dim(8) == 4);
+
+  printf("OK\n");
+}
+
+void test_constructors_int()
+{
+  printf("test_constructors_int() ... ");
+  
+  Array<int, 3>  A;
+  Array<int, 1>  B(5);
+  Array<int, 2>  C(2,3);
+  Array<int, 3>  D(2,3,4);
+  Array<int, 4>  E(2,3,4,3);
+  Array<int, 5>  F(2,3,4,3,2);
+  Array<int, 6>  G(2,3,4,3,2,1);
+  Array<int, 7>  H(2,3,4,3,2,1,2);
+  Array<int, 8>  I(2,3,4,3,2,1,2,3, /*value*/ 99);
+  Array<int, 9>  J(2,3,4,3,2,1,2,3,4);
+  
+  assert( A.size() == 0    );
+  assert( B.size() == 5    );
+  assert( C.size() == 6    );
+  assert( D.size() == 24   );
+  assert( E.size() == 72   );
+  assert( F.size() == 144  );
+  assert( G.size() == 144  );
+  assert( H.size() == 288  );
+  assert( I.size() == 864  );
+  assert( J.size() == 3456 );
+
+  for (int i=0; i<I.size(); ++i)
+	assert( I.at(i) == 99 );
+
+#ifdef DEBUG
+  // must throw
+  try {
+    A(1,2,3);
+    printf("error ...\n");
+    throw;
+  }
+  catch (...)
+  { }
+  
+  // must not throw
+  try {
+    D(1,2,3);
+  }
+  catch (...)
+  { printf("error ...\n"); throw; }
+#endif
+
+
+#define LOOP_TEST(M) \
+  for (int i = 0; i < M.size(); ++i) \
+  { \
+    assert(M[i] == 0); \
+    M[i] = i; \
+    assert(M[i] == i); \
+  }
+
+  LOOP_TEST(A)
+  LOOP_TEST(B)
+  LOOP_TEST(C)
+  LOOP_TEST(D)
+  LOOP_TEST(E)
+  LOOP_TEST(F)
+  LOOP_TEST(G)
+  LOOP_TEST(H)
+  //LOOP_TEST(I)
   LOOP_TEST(J)
 
   assert(A.dim(0) == 0);
@@ -138,7 +225,7 @@ void test_InitializerRowM()
   
   Array<double, 3> A(2,3,4);
   
-  A = 0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23;
+  A << 0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23;
   
   int accum = 0;
   for (int i = 0; i < A.dim(0); ++i)
@@ -155,7 +242,7 @@ void test_InitializerColM()
   
   Array<double, 3, ColMajor> B(2,3,4);
   
-  B = 0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23;
+  B << 0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23;
   
   int accum = 0;
   for (int k = 0; k < B.dim(2); ++k)
@@ -172,7 +259,7 @@ void test_CopyConstructor()
   
   Array<double, 3> B(2,3,4);
   
-  B = 0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23;
+  B << 0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23;
   
   Array<double, 3> A(B);
   
@@ -191,7 +278,7 @@ void test_Assign()
   
   Array<double, 3> B(2,3,4);
   
-  B = 0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23;
+  B << 0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23;
   
   Array<double, 3> A;
   
@@ -220,7 +307,7 @@ void test_Reshape()
   
   Array<double, 3> B(2,3,4);
   
-  B = 0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23;
+  B << 0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23;
 
   B.reshape(4,3,1);
   
@@ -252,7 +339,11 @@ void test_Reshape()
   
   for (int i = 0; i < B.size(); ++i)
     assert(B[i] == i);
-  
+ 
+  B.reshape(4,4,4, 1.25);
+  for (int i = 0; i < B.size(); ++i)
+	assert(B[i] == 1.25);
+
   printf("OK\n");
 }
 
@@ -262,7 +353,7 @@ void test_Amaps()
   
   Array<double, 3> B(2,3,4);
   
-  B = 0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23;
+  B << 0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23;
   
   Amaps<double, 2> A(B.data(), 6, 4);
   
@@ -312,7 +403,7 @@ void test_Amaps()
   assert(A.dim(0) == 12);
   assert(A.dim(1) == 2);  
   
-  A = -1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1;
+  A << -1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1;
   
   for (int i = 0; i < B.size(); ++i)
     assert( B[i] == -1 );
@@ -323,6 +414,7 @@ void test_Amaps()
 int main()
 {
   test_constructors();
+  test_constructors_int();
   test_RowMajor();  
   test_ColMajor();
   test_InitializerRowM();
