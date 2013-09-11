@@ -552,7 +552,7 @@ public:                                                                         
       new_size *= new_dims[i];                                                                           \
     }                                                                                                    \
                                                                                                          \
-    resize(new_size, val);                                                                               \
+    this->resize(new_size, val);                                                                               \
   }                                                                                                      \
                                                                                                          \
 };
