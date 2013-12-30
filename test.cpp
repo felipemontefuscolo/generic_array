@@ -2,6 +2,8 @@
 #include <cstdio>
 #include <cassert>
 
+#include <deque>
+
 #include <Array/array.hpp>
 
 using namespace std;
@@ -411,6 +413,21 @@ void test_Amaps()
   printf("OK\n");
 }
 
+void test_deque()
+{
+  Array<int, 3, RowMajor, std::deque<int> > B(600,3,10);
+  
+  for(int i=0; i<B.size(); ++i)
+    B[i] = i;
+
+  for(int i=0; i<B.dim(0); ++i)
+    for (int j=0; j<B.dim(1); ++j)
+      for (int k=0; k<B.dim(2); ++k)
+        assert(B(i,j,k) == i*B.dim(2)*B.dim(1) + j*B.dim(2) + k);
+
+}
+
+
 int main()
 {
   test_constructors();
@@ -420,7 +437,8 @@ int main()
   test_InitializerRowM();
   test_InitializerColM();
   test_Amaps();
-  
+  test_deque();
+
   printf("Everything seems OK \n");
 }
 

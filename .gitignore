@@ -15,3 +15,7 @@
 # Executable
 test
 
+# vim
+*.swp
+
+
