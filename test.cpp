@@ -427,6 +427,24 @@ void test_deque()
 
 }
 
+void test_deque_iterators()
+{
+  typedef Array<int, 3, RowMajor, std::deque<int> > Array_t;
+  
+  Array_t B(600,3,10);
+  Array_t::iterator it, end;
+  
+  int c = 0;
+  for(it = B.begin(); it < B.end(); ++it)
+    *it = c++;
+
+  for(int i=0; i<B.dim(0); ++i)
+    for (int j=0; j<B.dim(1); ++j)
+      for (int k=0; k<B.dim(2); ++k)
+        assert(B(i,j,k) == i*B.dim(2)*B.dim(1) + j*B.dim(2) + k);
+
+}
+
 
 int main()
 {
@@ -438,6 +456,7 @@ int main()
   test_InitializerColM();
   test_Amaps();
   test_deque();
+  test_deque_iterators();
 
   printf("Everything seems OK \n");
 }

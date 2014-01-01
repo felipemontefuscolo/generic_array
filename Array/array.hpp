@@ -272,23 +272,23 @@ class ArrayBase
   #define CONST_THIS static_cast<const Derived*>(this)
 #endif
 
+  typedef internal::Traits<Derived> Traits_Derived;
   typedef ArrayBase Self;
-  typedef typename internal::Traits<Derived>::UserT UserT;
-  static const int Rank = internal::Traits<Derived>::Rank;
-  static const bool isRowMajor = internal::Traits<Derived>::isRowMajor;
+  typedef typename Traits_Derived::UserT UserT;
+  static const int Rank = Traits_Derived::Rank;
+  static const bool isRowMajor = Traits_Derived::isRowMajor;
 
 
 public:
 
-  typedef          UserT&                       reference;
-  typedef          UserT const&                 const_reference;
-  typedef          UserT*                       iterator;
-  typedef          UserT const*                 const_iterator;
-  typedef          int                          size_type;
-  typedef          std::ptrdiff_t               difference_type;
-  typedef          UserT*                       pointer;
-  typedef          UserT const*                 const_pointer;
-
+  typedef typename Traits_Derived::reference        reference;
+  typedef typename Traits_Derived::const_reference  const_reference;
+  typedef typename Traits_Derived::iterator         iterator;
+  typedef typename Traits_Derived::const_iterator   const_iterator;
+  typedef typename Traits_Derived::size_type        size_type;
+  typedef typename Traits_Derived::difference_type  difference_type;
+  typedef typename Traits_Derived::pointer          pointer;
+  typedef typename Traits_Derived::const_pointer    const_pointer;
 
 
 // define call operator
@@ -517,11 +517,17 @@ class Array<P_type,P_rank,P_opts,P_MemBlock> : public GenericN<P_type,P_rank,P_o
   typedef typename Base0::Base1  Base1;                                                                  \
   typedef typename Base0::Base2  Base2;                                                                  \
                                                                                                          \
-  typedef typename Base2::reference reference;                                                           \
-  typedef typename Base2::const_reference const_reference;                                               \
-                                                                                                         \
                                                                                                          \
 public:                                                                                                  \
+                                                                                                         \
+  typedef typename Base2::reference        reference;                                                    \
+  typedef typename Base2::const_reference  const_reference;                                              \
+  typedef typename Base2::iterator         iterator;                                                     \
+  typedef typename Base2::const_iterator   const_iterator;                                               \
+  typedef typename Base2::size_type        size_type;                                                    \
+  typedef typename Base2::difference_type  difference_type;                                              \
+  typedef typename Base2::pointer          pointer;                                                      \
+  typedef typename Base2::const_pointer    const_pointer;                                                \
                                                                                                          \
   typedef P_type UserT;                                                                                  \
   static const int Rank = P_rank;                                                                        \
@@ -552,7 +558,7 @@ public:                                                                         
       new_size *= new_dims[i];                                                                           \
     }                                                                                                    \
                                                                                                          \
-    this->resize(new_size, val);                                                                               \
+    this->resize(new_size, val);                                                                         \
   }                                                                                                      \
                                                                                                          \
 };
@@ -588,8 +594,14 @@ class Amaps : public ArrayBase<Amaps<P_type,P_rank,P_opts> >
 
   typedef ArrayBase<Amaps> Base;
 
-  typedef typename Base::reference reference;
-  typedef typename Base::const_reference const_reference;
+  typedef typename Base::reference        reference;
+  typedef typename Base::const_reference  const_reference;
+  typedef typename Base::iterator         iterator;
+  typedef typename Base::const_iterator   const_iterator;
+  typedef typename Base::size_type        size_type;
+  typedef typename Base::difference_type  difference_type;
+  typedef typename Base::pointer          pointer;
+  typedef typename Base::const_pointer    const_pointer;
 
   friend class ArrayBase<Amaps>;
 
@@ -694,6 +706,16 @@ struct Traits<GenericN<T,A,O,M> > {
   static const int Rank = A;
   static const bool isRowMajor = O & RowMajor;
   typedef M MemBlockT;
+
+  typedef typename MemBlockT::reference        reference;
+  typedef typename MemBlockT::const_reference  const_reference;
+  typedef typename MemBlockT::iterator         iterator;
+  typedef typename MemBlockT::const_iterator   const_iterator;
+  typedef typename MemBlockT::size_type        size_type;
+  typedef typename MemBlockT::difference_type  difference_type;
+  typedef typename MemBlockT::pointer          pointer;
+  typedef typename MemBlockT::const_pointer    const_pointer;
+
 };
 
 template<class T, int A, Options O>
@@ -701,6 +723,16 @@ struct Traits<Amaps<T,A,O> > {
   typedef T UserT;
   static const int Rank = A;
   static const bool isRowMajor = O & RowMajor;
+
+  typedef  UserT&          reference;
+  typedef  UserT const&    const_reference;
+  typedef  UserT*          iterator;
+  typedef  UserT const*    const_iterator;
+  typedef  int             size_type;
+  typedef  std::ptrdiff_t  difference_type;
+  typedef  UserT*          pointer;
+  typedef  UserT const*    const_pointer;
+
 };
 
 
