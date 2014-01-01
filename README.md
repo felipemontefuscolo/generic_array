@@ -19,7 +19,7 @@ Features:
 
 This library has/is
 
-- very simple API;
+- a very simple API;
 - lightweight;
 - tested
 - fast (for the moment only one comparison to boost::multi_array is made in benchmark directory. I'll do more later)
