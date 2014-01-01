@@ -93,7 +93,7 @@ void test_constructors()
   assert(J.dim(7) == 3);
   assert(J.dim(8) == 4);
 
-  printf("OK\n");
+  
 }
 
 void test_constructors_int()
@@ -177,7 +177,7 @@ void test_constructors_int()
   assert(J.dim(7) == 3);
   assert(J.dim(8) == 4);
 
-  printf("OK\n");
+  
 }
 
 void test_RowMajor()
@@ -197,7 +197,7 @@ void test_RowMajor()
       for (int k = 0; k < A.dim(2); ++k)
         assert( A(i,j,k) ==  accum++);
   
-  printf("OK\n");
+  
 }
 
 void test_ColMajor()
@@ -218,7 +218,7 @@ void test_ColMajor()
       for (int i = 0; i < A.dim(0); ++i)
         assert( A(i,j,k) ==  accum++);
   
-  printf("OK\n");
+  
 }
 
 void test_InitializerRowM()
@@ -235,7 +235,7 @@ void test_InitializerRowM()
       for (int k = 0; k < A.dim(2); ++k)
         assert( A(i,j,k) ==  accum++);  
   
-  printf("OK\n");
+  
 }
 
 void test_InitializerColM()
@@ -252,7 +252,7 @@ void test_InitializerColM()
       for (int i = 0; i < B.dim(0); ++i)
         assert( B(i,j,k) ==  accum++);  
   
-  printf("OK\n");
+  
 }
 
 void test_CopyConstructor()
@@ -271,7 +271,7 @@ void test_CopyConstructor()
       for (int k = 0; k < A.dim(2); ++k)
         assert( A(i,j,k) ==  accum++);    
   
-  printf("OK\n");
+  
 }
 
 void test_Assign()
@@ -298,9 +298,9 @@ void test_Assign()
   for (int i = 0; i < B.dim(0); ++i)
     for (int j = 0; j < B.dim(1); ++j)
       for (int k = 0; k < B.dim(2); ++k)
-        assert( B(i,j,k) > 0  );  
+        assert( B(i,j,k) >= 0  );  
   
-  printf("OK\n");
+  
 }
 
 void test_Reshape()
@@ -342,11 +342,22 @@ void test_Reshape()
   for (int i = 0; i < B.size(); ++i)
     assert(B[i] == i);
  
-  B.reshape(4,4,4, 1.25);
-  for (int i = 0; i < B.size(); ++i)
-	assert(B[i] == 1.25);
+  double const some_val = 1.25;
+  B.reshape(8,4,4, some_val);
+  for (int i = 0; i < B.dim(0); ++i)
+    for (int j = 0; j < B.dim(1); ++j)
+      for (int k = 0; k < B.dim(2); ++k)
+      {
+        if (i<4)
+          // WARNING: it is not true for other dimensions because the elements
+          // is stored in a contiguous memory block. It is not true
+          // for ColMajor too.
+          assert(B(i,j,k) == i*B.dim(1)*B.dim(2) + j*B.dim(2) + k);
+        else
+          assert(B(i,j,k) == some_val);
+      }
 
-  printf("OK\n");
+  
 }
 
 void test_Amaps()
@@ -410,11 +421,13 @@ void test_Amaps()
   for (int i = 0; i < B.size(); ++i)
     assert( B[i] == -1 );
   
-  printf("OK\n");
+  
 }
 
 void test_deque()
 {
+  printf("test_deque() ... ");
+
   Array<int, 3, RowMajor, std::deque<int> > B(600,3,10);
   
   for(int i=0; i<B.size(); ++i)
@@ -425,6 +438,7 @@ void test_deque()
       for (int k=0; k<B.dim(2); ++k)
         assert(B(i,j,k) == i*B.dim(2)*B.dim(1) + j*B.dim(2) + k);
 
+  
 }
 
 void test_deque_iterators()
@@ -443,20 +457,28 @@ void test_deque_iterators()
       for (int k=0; k<B.dim(2); ++k)
         assert(B(i,j,k) == i*B.dim(2)*B.dim(1) + j*B.dim(2) + k);
 
+  
 }
+
+#define TEST(fun_name) printf( #fun_name "() ... "); \
+                       fun_name ();                  \
+                       printf("OK\n");
 
 
 int main()
 {
-  test_constructors();
-  test_constructors_int();
-  test_RowMajor();  
-  test_ColMajor();
-  test_InitializerRowM();
-  test_InitializerColM();
-  test_Amaps();
-  test_deque();
-  test_deque_iterators();
+  TEST(test_constructors    );  
+  TEST(test_constructors_int);  
+  TEST(test_RowMajor        );  
+  TEST(test_ColMajor        );  
+  TEST(test_InitializerRowM );  
+  TEST(test_InitializerColM );  
+  TEST(test_CopyConstructor );
+  TEST(test_Assign          );
+  TEST(test_Reshape         );
+  TEST(test_Amaps           );
+  TEST(test_deque           );
+  TEST(test_deque_iterators );
 
   printf("Everything seems OK \n");
 }
