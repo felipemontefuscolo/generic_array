@@ -264,175 +264,122 @@ namespace internal
 //                                                             d8'
 //                                                            d8'
 
-template<typename Derived>
+template<typename Derived, int P_rank>
 class ArrayBase
-{
+{};
+
 #if !defined(THIS) && !defined(CONST_THIS)
   #define THIS static_cast<Derived*>(this)
   #define CONST_THIS static_cast<const Derived*>(this)
 #endif
 
-  typedef internal::Traits<Derived> Traits_Derived;
-  typedef ArrayBase Self;
-  typedef typename Traits_Derived::UserT UserT;
-  static const int Rank = Traits_Derived::Rank;
-  static const bool isRowMajor = Traits_Derived::isRowMajor;
+#define IMPLEMENT_BASE(P_rank)                                                                \
+template<typename Derived>                                                                    \
+class ArrayBase<Derived, P_rank>                                                              \
+{                                                                                             \
+                                                                                              \
+  typedef internal::Traits<Derived> Traits_Derived;                                           \
+  typedef ArrayBase Self;                                                                     \
+  typedef typename Traits_Derived::UserT UserT;                                               \
+  static const int Rank = Traits_Derived::Rank;                                               \
+  static const bool isRowMajor = Traits_Derived::isRowMajor;                                  \
+                                                                                              \
+public:                                                                                       \
+                                                                                              \
+  typedef typename Traits_Derived::reference        reference;                                \
+  typedef typename Traits_Derived::const_reference  const_reference;                          \
+  typedef typename Traits_Derived::iterator         iterator;                                 \
+  typedef typename Traits_Derived::const_iterator   const_iterator;                           \
+  typedef typename Traits_Derived::size_type        size_type;                                \
+  typedef typename Traits_Derived::difference_type  difference_type;                          \
+  typedef typename Traits_Derived::pointer          pointer;                                  \
+  typedef typename Traits_Derived::const_pointer    const_pointer;                            \
+                                                                                              \
+                                                                                              \
+  reference operator() (MA_EXPAND_ARGS(P_rank, int))                                          \
+  {                                                                                           \
+    MA_STATIC_CHECK(Rank==P_rank, INVALID_NUMBER_OF_ARGS_IN_CALL_OP);                         \
+                                                                                              \
+    int const indices[] = {MA_EXPAND_SEQ(P_rank)};                                            \
+                                                                                              \
+    internal::BoundCheck<Rank>::check(THIS->rdims(), indices);                                \
+                                                                                              \
+    typedef typename internal::IdxComputationTraits<Rank, isRowMajor>::type ToGlobal;         \
+                                                                                              \
+    return THIS->access( ToGlobal::idx(THIS->rdims(), indices) );                             \
+  }                                                                                           \
+                                                                                              \
+  const_reference operator() (MA_EXPAND_ARGS(P_rank, int)) const                              \
+  {                                                                                           \
+    MA_STATIC_CHECK(Rank==P_rank, INVALID_NUMBER_OF_ARGS_IN_CALL_OP);                         \
+                                                                                              \
+    int const indices[] = {MA_EXPAND_SEQ(P_rank)};                                            \
+                                                                                              \
+    internal::BoundCheck<Rank>::check(CONST_THIS->rdims(), indices);                          \
+                                                                                              \
+    typedef typename internal::IdxComputationTraits<Rank, isRowMajor>::type ToGlobal;         \
+                                                                                              \
+    return CONST_THIS->access( ToGlobal::idx(CONST_THIS->rdims(), indices) );                 \
+  };                                                                                          \
+                                                                                              \
+  reference get(MA_EXPAND_ARGS(P_rank, int))                                                  \
+  {                                                                                           \
+    MA_STATIC_CHECK(Rank==P_rank, INVALID_NUMBER_OF_ARGS_IN_CALL_OP);                         \
+                                                                                              \
+    int const indices[] = {MA_EXPAND_SEQ(P_rank)};                                            \
+                                                                                              \
+    internal::BoundCheck<Rank>::check(THIS->rdims(), indices);                                \
+                                                                                              \
+    typedef typename internal::IdxComputationTraits<Rank, isRowMajor>::type ToGlobal;         \
+                                                                                              \
+    return THIS->access_check( ToGlobal::idx(THIS->rdims(), indices) );                       \
+  }                                                                                           \
+                                                                                              \
+  const_reference get(MA_EXPAND_ARGS(P_rank, int)) const                                      \
+  {                                                                                           \
+    MA_STATIC_CHECK(Rank==P_rank, INVALID_NUMBER_OF_ARGS_IN_CALL_OP);                         \
+                                                                                              \
+    int const indices[] = {MA_EXPAND_SEQ(P_rank)};                                            \
+                                                                                              \
+    internal::BoundCheck<Rank>::check(CONST_THIS->rdims(), indices);                          \
+                                                                                              \
+    typedef typename internal::IdxComputationTraits<Rank, isRowMajor>::type ToGlobal;         \
+                                                                                              \
+    return CONST_THIS->access_check( ToGlobal::idx(CONST_THIS->rdims(), indices) );           \
+  };                                                                                          \
+                                                                                              \
+                                                                                              \
+  int maxDim() const                                                                          \
+  {                                                                                           \
+    int m = 0;                                                                                \
+    for (int i = 0; i < Rank; ++i)                                                            \
+      if ( CONST_THIS->dim(i) > m)                                                            \
+        m = CONST_THIS->dim(i);                                                               \
+    return m;                                                                                 \
+  }                                                                                           \
+                                                                                              \
+                                                                                              \
+                                                                                              \
+                                                                                              \
+};
 
 
-public:
+IMPLEMENT_BASE(1)
+IMPLEMENT_BASE(2)
+IMPLEMENT_BASE(3)
+IMPLEMENT_BASE(4)
+IMPLEMENT_BASE(5)
+IMPLEMENT_BASE(6)
+IMPLEMENT_BASE(7)
+IMPLEMENT_BASE(8)
+IMPLEMENT_BASE(9)
+IMPLEMENT_BASE(10)
 
-  typedef typename Traits_Derived::reference        reference;
-  typedef typename Traits_Derived::const_reference  const_reference;
-  typedef typename Traits_Derived::iterator         iterator;
-  typedef typename Traits_Derived::const_iterator   const_iterator;
-  typedef typename Traits_Derived::size_type        size_type;
-  typedef typename Traits_Derived::difference_type  difference_type;
-  typedef typename Traits_Derived::pointer          pointer;
-  typedef typename Traits_Derived::const_pointer    const_pointer;
-
-
-// define call operator
-#define MA_DEF_CALL_OP(n_args_)                                                       \
-  reference operator() (MA_EXPAND_ARGS(n_args_, int))                                 \
-  {                                                                                   \
-    MA_STATIC_CHECK(Rank==n_args_, INVALID_NUMBER_OF_ARGS_IN_CALL_OP);                \
-                                                                                      \
-    int const indices[] = {MA_EXPAND_SEQ(n_args_)};                                   \
-                                                                                      \
-    internal::BoundCheck<Rank>::check(THIS->rdims(), indices);                        \
-                                                                                      \
-    typedef typename internal::IdxComputationTraits<Rank, isRowMajor>::type ToGlobal; \
-                                                                                      \
-    return THIS->operator[] ( ToGlobal::idx(THIS->rdims(), indices) );                \
-  }
-
-  // define call operators
-  MA_DEF_CALL_OP(1)
-  MA_DEF_CALL_OP(2)
-  MA_DEF_CALL_OP(3)
-  MA_DEF_CALL_OP(4)
-  MA_DEF_CALL_OP(5)
-  MA_DEF_CALL_OP(6)
-  MA_DEF_CALL_OP(7)
-  MA_DEF_CALL_OP(8)
-  MA_DEF_CALL_OP(9)
-  MA_DEF_CALL_OP(10)
-#undef MA_DEF_CALL_OP
-
-
-// define const call operator
-#define MA_DEF_CONST_CALL_OP(n_args_)                                                 \
-  const_reference operator() (MA_EXPAND_ARGS(n_args_, int)) const                     \
-  {                                                                                   \
-    MA_STATIC_CHECK(Rank==n_args_, INVALID_NUMBER_OF_ARGS_IN_CALL_OP);                \
-                                                                                      \
-    int const indices[] = {MA_EXPAND_SEQ(n_args_)};                                   \
-                                                                                      \
-    internal::BoundCheck<Rank>::check(CONST_THIS->rdims(), indices);                        \
-                                                                                      \
-    typedef typename internal::IdxComputationTraits<Rank, isRowMajor>::type ToGlobal; \
-                                                                                      \
-    return CONST_THIS->operator[] ( ToGlobal::idx(CONST_THIS->rdims(), indices) );                \
-  };
-
-  // define call operators
-  MA_DEF_CONST_CALL_OP(1)
-  MA_DEF_CONST_CALL_OP(2)
-  MA_DEF_CONST_CALL_OP(3)
-  MA_DEF_CONST_CALL_OP(4)
-  MA_DEF_CONST_CALL_OP(5)
-  MA_DEF_CONST_CALL_OP(6)
-  MA_DEF_CONST_CALL_OP(7)
-  MA_DEF_CONST_CALL_OP(8)
-  MA_DEF_CONST_CALL_OP(9)
-  MA_DEF_CONST_CALL_OP(10)
-#undef MA_DEF_CONST_CALL_OP
-
-
-
-
-
-
-// check bound
-
-// define call operator
-#define MA_DEF_CALL_OP(n_args_)                                                       \
-  reference get(MA_EXPAND_ARGS(n_args_, int))                                          \
-  {                                                                                   \
-    MA_STATIC_CHECK(Rank==n_args_, INVALID_NUMBER_OF_ARGS_IN_CALL_OP);                \
-                                                                                      \
-    int const indices[] = {MA_EXPAND_SEQ(n_args_)};                                   \
-                                                                                      \
-    internal::BoundCheck<Rank>::check(THIS->rdims(), indices);                        \
-                                                                                      \
-    typedef typename internal::IdxComputationTraits<Rank, isRowMajor>::type ToGlobal; \
-                                                                                      \
-    return THIS->at( ToGlobal::idx(THIS->rdims(), indices) );                         \
-  }
-
-  // define call operators
-  MA_DEF_CALL_OP(1)
-  MA_DEF_CALL_OP(2)
-  MA_DEF_CALL_OP(3)
-  MA_DEF_CALL_OP(4)
-  MA_DEF_CALL_OP(5)
-  MA_DEF_CALL_OP(6)
-  MA_DEF_CALL_OP(7)
-  MA_DEF_CALL_OP(8)
-  MA_DEF_CALL_OP(9)
-  MA_DEF_CALL_OP(10)
-#undef MA_DEF_CALL_OP
-
-
-// define const call operator
-#define MA_DEF_CONST_CALL_OP(n_args_)                                                 \
-  const_reference get(MA_EXPAND_ARGS(n_args_, int)) const                              \
-  {                                                                                   \
-    MA_STATIC_CHECK(Rank==n_args_, INVALID_NUMBER_OF_ARGS_IN_CALL_OP);                \
-                                                                                      \
-    int const indices[] = {MA_EXPAND_SEQ(n_args_)};                                   \
-                                                                                      \
-    internal::BoundCheck<Rank>::check(CONST_THIS->rdims(), indices);                  \
-                                                                                      \
-    typedef typename internal::IdxComputationTraits<Rank, isRowMajor>::type ToGlobal; \
-                                                                                      \
-    return CONST_THIS->at( ToGlobal::idx(CONST_THIS->rdims(), indices) );    \
-  };
-
-  // define call operators
-  MA_DEF_CONST_CALL_OP(1)
-  MA_DEF_CONST_CALL_OP(2)
-  MA_DEF_CONST_CALL_OP(3)
-  MA_DEF_CONST_CALL_OP(4)
-  MA_DEF_CONST_CALL_OP(5)
-  MA_DEF_CONST_CALL_OP(6)
-  MA_DEF_CONST_CALL_OP(7)
-  MA_DEF_CONST_CALL_OP(8)
-  MA_DEF_CONST_CALL_OP(9)
-  MA_DEF_CONST_CALL_OP(10)
-#undef MA_DEF_CONST_CALL_OP
-
-
-
-
-  int maxDim() const
-  {
-    int m = 0;
-    for (int i = 0; i < Rank; ++i)
-      if ( CONST_THIS->dim(i) > m)
-        m = CONST_THIS->dim(i);
-    return m;
-  }
-
-
-  // Const Version -----------
-
+#undef IMPLEMENT_BASE
 
 
 #undef THIS
 #undef CONST_THIS
-};
-
 
 //              db
 //             d88b
@@ -446,16 +393,17 @@ public:
 //                                                            d8'
 
 template<typename P_type, int P_rank, Options P_opts = MA_DEFAULT_MAJOR, typename P_MemBlock = std::vector<P_type> >
-class GenericN : public P_MemBlock, public ArrayBase<GenericN<P_type,P_rank,P_opts,P_MemBlock> >
+class GenericN : public P_MemBlock, public ArrayBase<GenericN<P_type,P_rank,P_opts,P_MemBlock>,P_rank>
 {
 protected:
-  typedef P_MemBlock       Base1;
-  typedef ArrayBase<GenericN> Base2;
+  typedef P_MemBlock          Base1;
+  typedef ArrayBase<GenericN,P_rank> Base2;
 
   typedef typename Base2::reference reference;
   typedef typename Base2::const_reference const_reference;
+  typedef typename Base2::size_type size_type;
 
-  friend class ArrayBase<GenericN>;
+  friend class ArrayBase<GenericN,P_rank>;
 
 //  using P_MemBlock::m_data;
 
@@ -489,6 +437,23 @@ public:
   { return Base1::size(); }
 
 protected:
+
+  inline
+  reference access(size_type i)
+  { return P_MemBlock::operator[] (i);}
+
+  inline
+  const_reference access(size_type i) const
+  { return P_MemBlock::operator[] (i);}
+
+  inline
+  reference access_check(size_type i)
+  { return P_MemBlock::at(i);}
+
+  inline
+  const_reference access_check(size_type i) const
+  { return P_MemBlock::at(i);}
+
 
   // vecotr with rank sizes
   int* rdims()
@@ -589,10 +554,10 @@ IMPLEMENT_ARRAY(10)
 //                                                       88
 
 template<typename P_type, int P_rank, Options P_opts = MA_DEFAULT_MAJOR >
-class Amaps : public ArrayBase<Amaps<P_type,P_rank,P_opts> >
+class Amaps : public ArrayBase<Amaps<P_type,P_rank,P_opts>,P_rank>
 {
 
-  typedef ArrayBase<Amaps> Base;
+  typedef ArrayBase<Amaps,P_rank> Base;
 
   typedef typename Base::reference        reference;
   typedef typename Base::const_reference  const_reference;
@@ -603,7 +568,7 @@ class Amaps : public ArrayBase<Amaps<P_type,P_rank,P_opts> >
   typedef typename Base::pointer          pointer;
   typedef typename Base::const_pointer    const_pointer;
 
-  friend class ArrayBase<Amaps>;
+  friend class ArrayBase<Amaps,P_rank>;
 
 public:
 
@@ -688,6 +653,25 @@ public:
   { return m_data[i]; }
 
 protected: // used by base class
+
+  inline
+  reference access(size_type i)
+  { return m_data[i];}
+
+  inline
+  const_reference access(size_type i) const
+  { return m_data[i];}
+
+  inline
+  reference access_check(size_type i)
+  { return m_data[i];}
+
+  inline
+  const_reference access_check(size_type i) const
+  { return m_data[i];}
+
+
+
 
   // vecotr with rank sizes
   int* rdims()
