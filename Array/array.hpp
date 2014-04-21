@@ -143,15 +143,15 @@ namespace internal
   template<int Rank>
   struct RowMajIdxComputer
   {
-    static int idx(int const*const sizes, int const*const indices)
+    static std::size_t idx(std::size_t const*const sizes, std::size_t const*const indices)
     {
-      return RowMajIdxComputer<Rank-1>::idx(sizes, indices) * sizes[Rank-1]  + indices[Rank-1];
+      return RowMajIdxComputer<Rank-1>::idx(sizes, indices) * (std::size_t)sizes[Rank-1]  + indices[Rank-1];
     }
   };
   template<>
   struct RowMajIdxComputer<1>
   {
-    static int idx(int const*, int const* indices)
+    static int idx(std::size_t const*, std::size_t const* indices)
     { return indices[0]; }
   };
 
@@ -161,15 +161,15 @@ namespace internal
   template<int Rank>
   struct ColMajIdxComputer
   {
-    static int idx(int const* sizes, int const* indices)
+    static int idx(std::size_t const* sizes, std::size_t const* indices)
     {
-      return indices[0] + sizes[0]*ColMajIdxComputer<Rank-1>::idx(sizes+1, indices+1);
+      return indices[0] + ((std::size_t)sizes[0])*ColMajIdxComputer<Rank-1>::idx(sizes+1, indices+1);
     }
   };
   template<>
   struct ColMajIdxComputer<1>
   {
-    static int idx(int const*const, int const*const indices)
+    static int idx(std::size_t const*const, std::size_t const*const indices)
     { return indices[0]; }
   };
 
@@ -193,7 +193,7 @@ namespace internal
   template<int Rank>
   struct BoundCheck
   {
-    static void check(int const dims[], int const args[])
+    static void check(std::size_t const dims[], std::size_t const args[])
     {
       if (args[0] >= dims[0])
         throw std::out_of_range ("ERROR: Array<>: invalid index");
@@ -204,7 +204,7 @@ namespace internal
   template<>
   struct BoundCheck<1>
   {
-    static void check(int const dims[], int const args[])
+    static void check(std::size_t const dims[], std::size_t const args[])
     {
       if (args[0] >= dims[0])
         throw std::out_of_range ("ERROR: Array<>: invalid index");
@@ -212,7 +212,7 @@ namespace internal
   };
 
   // assert i < j
-  inline void assertLess(int i, int j, const char* msg)
+  inline void assertLess(std::size_t i, std::size_t j, const char* msg)
   {
     if (i >= j)
       throw std::out_of_range (msg);
@@ -281,7 +281,7 @@ struct Proxy
 {
 	VecT ids[Rank]; // indices
 	S a;
-  explicit Proxy(int i, S a_) : a(a_)
+  explicit Proxy(std::size_t i, S a_) : a(a_)
 	{
 		ids[0] = i;
 	}
@@ -298,9 +298,9 @@ struct Proxy
 template<int Count, int Rank, class S> // Count = Rank - 1
 struct Proxy<Count, Rank, void, S>
 {
-	int* ids; // indices
+	std::size_t* ids; // indices
 	S a;
-  explicit Proxy(int* i, S a_) : ids(i), a(a_)
+  explicit Proxy(std::size_t* i, S a_) : ids(i), a(a_)
 	{	}
 
 	typedef Proxy type;
@@ -317,9 +317,9 @@ struct Proxy<Count, Rank, void, S>
 template<int Rank, class S>
 struct Proxy<0, Rank, void, S>
 {
-	int* ids;
+	std::size_t* ids;
   S a;
-	explicit Proxy(int* v, S a_) : ids(v), a(a_)
+	explicit Proxy(std::size_t* v, S a_) : ids(v), a(a_)
 	{ }
 
   typedef typename std::tr1::remove_reference<S>::type S_no_ref;
@@ -338,7 +338,7 @@ struct Proxy<0, Rank, VecT, S>
 {
 	VecT ids[Rank];
   S a;
-	explicit Proxy(int i, S a_) : a(a_)
+	explicit Proxy(std::size_t i, S a_) : a(a_)
 	{ ids[0] = i;	}
 
   typedef typename std::tr1::remove_reference<S>::type S_no_ref;
@@ -393,11 +393,11 @@ public:                                                                         
   typedef typename Traits_Derived::const_pointer    const_pointer;                            \
                                                                                               \
                                                                                               \
-  reference operator() (MA_EXPAND_ARGS(P_rank, int))                                          \
+  reference operator() (MA_EXPAND_ARGS(P_rank, size_type))                                    \
   {                                                                                           \
     MA_STATIC_CHECK(Rank==P_rank, INVALID_NUMBER_OF_ARGS_IN_CALL_OP);                         \
                                                                                               \
-    int const indices[] = {MA_EXPAND_SEQ(P_rank)};                                            \
+    size_type const indices[] = {MA_EXPAND_SEQ(P_rank)};                                      \
                                                                                               \
     internal::BoundCheck<Rank>::check(THIS->rdims(), indices);                                \
                                                                                               \
@@ -406,11 +406,11 @@ public:                                                                         
     return THIS->access( ToGlobal::idx(THIS->rdims(), indices) );                             \
   }                                                                                           \
                                                                                               \
-  const_reference operator() (MA_EXPAND_ARGS(P_rank, int)) const                              \
+  const_reference operator() (MA_EXPAND_ARGS(P_rank, size_type)) const                        \
   {                                                                                           \
     MA_STATIC_CHECK(Rank==P_rank, INVALID_NUMBER_OF_ARGS_IN_CALL_OP);                         \
                                                                                               \
-    int const indices[] = {MA_EXPAND_SEQ(P_rank)};                                            \
+    size_type const indices[] = {MA_EXPAND_SEQ(P_rank)};                                      \
                                                                                               \
     internal::BoundCheck<Rank>::check(CONST_THIS->rdims(), indices);                          \
                                                                                               \
@@ -419,16 +419,16 @@ public:                                                                         
     return CONST_THIS->access( ToGlobal::idx(CONST_THIS->rdims(), indices) );                 \
   };                                                                                          \
                                                                                               \
-	typename internal::Proxy<Rank-1,Rank,int,Self&>::type                                       \
+	typename internal::Proxy<Rank-1,Rank,size_type,Self&>::type                                 \
 	operator[] (size_type i)                                                                    \
 	{                                                                                           \
-		return internal::Proxy<Rank-1,Rank,int,Self&>(i, *this);                                  \
+		return internal::Proxy<Rank-1,Rank,size_type,Self&>(i, *this);                            \
 	}                                                                                           \
                                                                                               \
-	typename internal::Proxy<Rank-1,Rank,int,Self const&>::type                                 \
+	typename internal::Proxy<Rank-1,Rank,size_type,Self const&>::type                           \
 	operator[] (size_type i) const                                                              \
 	{                                                                                           \
-		return internal::Proxy<Rank-1,Rank,int,Self const&>(i, *this);                            \
+		return internal::Proxy<Rank-1,Rank,size_type,Self const&>(i, *this);                      \
 	}                                                                                           \
                                                                                               \
   reference get(MA_EXPAND_ARGS(P_rank, int))                                                  \
@@ -466,13 +466,13 @@ public:                                                                         
   const_reference access(size_type i) const                                                   \
   { return CONST_THIS->access(i);}                                                            \
                                                                                               \
-  int* rdims()                                                                                \
+  size_type* rdims()                                                                          \
   { return THIS->rdims(); }                                                                   \
                                                                                               \
-  int const* rdims() const                                                                    \
+  size_type const* rdims() const                                                              \
   { return CONST_THIS->rdims(); }                                                             \
                                                                                               \
-  int maxDim() const                                                                          \
+  size_type maxDim() const                                                                    \
   {                                                                                           \
     int m = 0;                                                                                \
     for (int i = 0; i < Rank; ++i)                                                            \
@@ -537,7 +537,7 @@ public:
   static const bool isRowMajor = P_opts & RowMajor;
 
 protected:
-  int m_rdims[Rank];   // size of each rank
+  size_type m_rdims[Rank];   // size of each rank
 
   // user can't use this
   using Base1::resize;
@@ -552,12 +552,12 @@ public:
   int rank() const
   { return Rank; }
 
-  int dim(int r) const
+  size_type dim(size_type r) const
   {
-    internal::assertTrue(r < Rank, "**ERROR**: Array<>: invalid index in function `size()`");
+    internal::assertTrue(r < (size_type)Rank, "**ERROR**: Array<>: invalid index in function `size()`");
     return m_rdims[r];
   }
-  int size() const
+  size_type size() const
   { return Base1::size(); }
 
 
@@ -580,10 +580,10 @@ public:
 
 protected:
   // vecotr with rank sizes
-  int* rdims()
+  size_type* rdims()
   { return m_rdims; }
 
-  int const* rdims() const
+  size_type const* rdims() const
   { return m_rdims; }
 
 };
@@ -629,17 +629,17 @@ public:                                                                         
     return internal::ListInitializationSwitch<UserT, UserT*>(this->data(), x);                           \
   }                                                                                                      \
                                                                                                          \
-  Array(MA_EXPAND_ARGS(P_rank, int), UserT val = UserT())                                                \
+  Array(MA_EXPAND_ARGS(P_rank, size_type), UserT val = UserT())                                          \
   {                                                                                                      \
     reshape(MA_EXPAND_SEQ(P_rank), val);                                                                 \
   }                                                                                                      \
                                                                                                          \
-  void reshape(MA_EXPAND_ARGS(P_rank, int), UserT val = UserT())                                         \
+  void reshape(MA_EXPAND_ARGS(P_rank, size_type), UserT val = UserT())                                   \
   {                                                                                                      \
     MA_STATIC_CHECK(P_rank == Rank, TOO_FEW_ARGUMENTS_IN_RESHAPE);                                       \
-    int const new_dims[] = { MA_EXPAND_SEQ(P_rank) };                                                    \
+    size_type const new_dims[] = { MA_EXPAND_SEQ(P_rank) };                                              \
                                                                                                          \
-    int new_size = 1;                                                                                    \
+    size_type new_size = 1;                                                                              \
     for (int i = 0; i < Rank; ++i)                                                                       \
     {                                                                                                    \
       internal::assertTrue(new_dims[i] > 0, "**ERROR**: Array<>: dimension must be greater than 0");     \
@@ -701,9 +701,9 @@ public:
   static const bool isRowMajor = P_opts & RowMajor;
 
 private:
-  UserT* m_data;
-  int    m_size;
-  int    m_rdims[Rank];
+  UserT*       m_data;
+  size_type    m_size;
+  size_type    m_rdims[Rank];
 
   Amaps();
 public:
@@ -716,11 +716,11 @@ public:
   }
 
 #define MA_AMAPS_CONSTRUCTOR(n_args)                                                                 \
-  Amaps(UserT* mapped, MA_EXPAND_ARGS(n_args, int))                                                  \
+  Amaps(UserT* mapped, MA_EXPAND_ARGS(n_args, size_type))                                            \
   {                                                                                                  \
     MA_STATIC_CHECK(n_args == Rank, TOO_FEW_ARGUMENTS_IN_AMAPS_CONSTRUCTOR);                         \
                                                                                                      \
-    int const new_dims[] = { MA_EXPAND_SEQ(n_args) };                                                \
+    size_type const new_dims[] = { MA_EXPAND_SEQ(n_args) };                                          \
     m_size = 1;                                                                                      \
     for (int i = 0; i < Rank; ++i)                                                                   \
     {                                                                                                \
@@ -755,19 +755,19 @@ public:
   int rank() const
   { return Rank; }
 
-  int dim(int r) const
+  size_type dim(size_type r) const
   {
-    internal::assertTrue(r < Rank, "**ERROR**: Amaps<>: invalid index in function `size()`");
+    internal::assertTrue(r < (size_type)Rank, "**ERROR**: Amaps<>: invalid index in function `size()`");
     return m_rdims[r];
   }
 
-  int size() const
+  size_type size() const
   { return m_size; }
 
-  UserT* data()
+  pointer data()
   {return m_data; }
 
-  UserT const* data() const
+  const_pointer data() const
   {return m_data; }
 
 
@@ -791,10 +791,10 @@ public:
 protected:
 
   // vecotr with rank sizes
-  int* rdims()
+  size_type* rdims()
   { return m_rdims; }
 
-  int const* rdims() const
+  size_type const* rdims() const
   { return m_rdims; }
 };
 
@@ -829,7 +829,7 @@ struct Traits<Amaps<T,A,O> > {
   typedef  UserT const&    const_reference;
   typedef  UserT*          iterator;
   typedef  UserT const*    const_iterator;
-  typedef  int             size_type;
+  typedef  std::size_t     size_type;
   typedef  std::ptrdiff_t  difference_type;
   typedef  UserT*          pointer;
   typedef  UserT const*    const_pointer;
