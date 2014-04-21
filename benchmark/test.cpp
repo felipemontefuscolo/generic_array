@@ -5,15 +5,16 @@
 #include <boost/multi_array.hpp>
 #include "Array/array.hpp"
 
+
 void bench_10x10()
 {
-  printf("\naccess operator 10x10 matrices, 10000000 iterations\n\n");
-  
   const int X_SIZE = 10;
   const int Y_SIZE = 10;
   const int ITERATIONS = 10000000;
   clock_t startTime;
   clock_t endTime;
+
+  printf("\naccess operator 10x10 matrices, %d iterations\n\n", ITERATIONS);
 
   // Create Array
   marray::Array<double, 2> MyArray(X_SIZE,Y_SIZE);
@@ -95,13 +96,13 @@ void bench_10x10()
 
 void bench_100x100()
 {
-  printf("\naccess operator 100x100 matrices, 50000 iterations\n\n");
-  
   const int X_SIZE = 100;
   const int Y_SIZE = 100;
   const int ITERATIONS = 50000;
   clock_t startTime;
   clock_t endTime;
+
+  printf("\naccess operator 100x100 matrices, %d iterations\n\n", ITERATIONS);
 
   // Create Array
   marray::Array<double, 2> MyArray(X_SIZE,Y_SIZE);
@@ -183,14 +184,14 @@ void bench_100x100()
 
 void bench_3x3x3x3x3x3()
 {
-  printf("\naccess operator 3x3x3x3x3x3 matrices, 500000 iterations\n\n");
-  
   const int N = 3;
   
   const int n0=N,n1=N,n2=N,n3=N,n4=N,n5=N;
-  const int ITERATIONS = 500000;
+  const int ITERATIONS = 5000000;
   clock_t startTime;
   clock_t endTime;
+
+  printf("\naccess operator 3x3x3x3x3x3 matrices, %d iterations\n\n", ITERATIONS);
 
   // Create Array
   marray::Array<double, 6> MyArray(n0,n1,n2,n3,n4,n5);
@@ -269,7 +270,6 @@ void bench_3x3x3x3x3x3()
   if (nativeMatrix)
     delete nativeMatrix;  
 }
-
 
 
 int main(int, char* [])

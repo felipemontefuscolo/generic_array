@@ -40,7 +40,7 @@ enum Options {
 
 namespace internal
 {
-  template<class T> class Traits;
+  template<class T> struct Traits;
 
   template<int> struct CompileTimeError;
   template<> struct CompileTimeError<true> {};
@@ -264,6 +264,103 @@ namespace internal
 //                                                             d8'
 //                                                            d8'
 
+namespace internal
+{
+template<class T>
+struct GetRef;
+
+template<class T>
+struct GetRef<T&> { typedef typename T::reference type; };
+
+template<class T>
+struct GetRef<T const&> { typedef typename T::const_reference type; };
+
+
+template<int Count, int Rank, class VecT, class S> // Count = Rank - 1
+struct Proxy
+{
+	VecT ids[Rank]; // indices
+	S a;
+  explicit Proxy(int i, S a_) : a(a_)
+	{
+		ids[0] = i;
+	}
+
+	typedef Proxy type;
+
+	typename Proxy<Count-1, Rank, void, S>::type operator[] (int i)
+	{
+		ids[1] = i;
+		return Proxy<Count-1, Rank, void, S>(ids,a);
+	}
+};
+
+template<int Count, int Rank, class S> // Count = Rank - 1
+struct Proxy<Count, Rank, void, S>
+{
+	int* ids; // indices
+	S a;
+  explicit Proxy(int* i, S a_) : ids(i), a(a_)
+	{	}
+
+	typedef Proxy type;
+
+	typename Proxy<Count-1, Rank, void, S>::type operator[] (int i)
+	{
+		ids[Rank-Count] = i;
+		return Proxy<Count-1, Rank, void, S>(ids,a);
+	}
+};
+
+//std::remove_reference
+
+template<int Rank, class S>
+struct Proxy<0, Rank, void, S>
+{
+	int* ids;
+  S a;
+	explicit Proxy(int* v, S a_) : ids(v), a(a_)
+	{ }
+
+  typedef typename std::tr1::remove_reference<S>::type S_no_ref;
+
+  typedef typename GetRef<S>::type type;
+
+	operator type()
+  {
+    typedef typename internal::IdxComputationTraits<Rank, S_no_ref::isRowMajor>::type ToGlobal;
+    return a.access( ToGlobal::idx(a.rdims(), ids) );
+	}
+};
+
+template<int Rank, class VecT, class S>
+struct Proxy<0, Rank, VecT, S>
+{
+	VecT ids[Rank];
+  S a;
+	explicit Proxy(int i, S a_) : a(a_)
+	{ ids[0] = i;	}
+
+  typedef typename std::tr1::remove_reference<S>::type S_no_ref;
+
+  typedef typename GetRef<S>::type type;
+
+	operator type()
+  {
+    typedef typename internal::IdxComputationTraits<Rank, S_no_ref::isRowMajor>::type ToGlobal;
+    return a.access( ToGlobal::idx(a.rdims(), ids) );
+	}
+
+};
+
+
+
+
+}
+
+
+
+
 template<typename Derived, int P_rank>
 class ArrayBase
 {};
@@ -281,10 +378,10 @@ class ArrayBase<Derived, P_rank>                                                
   typedef internal::Traits<Derived> Traits_Derived;                                           \
   typedef ArrayBase Self;                                                                     \
   typedef typename Traits_Derived::UserT UserT;                                               \
-  static const int Rank = Traits_Derived::Rank;                                               \
-  static const bool isRowMajor = Traits_Derived::isRowMajor;                                  \
                                                                                               \
 public:                                                                                       \
+  static const int Rank = Traits_Derived::Rank;                                               \
+  static const bool isRowMajor = Traits_Derived::isRowMajor;                                  \
                                                                                               \
   typedef typename Traits_Derived::reference        reference;                                \
   typedef typename Traits_Derived::const_reference  const_reference;                          \
@@ -322,6 +419,18 @@ public:                                                                         
     return CONST_THIS->access( ToGlobal::idx(CONST_THIS->rdims(), indices) );                 \
   };                                                                                          \
                                                                                               \
+	typename internal::Proxy<Rank-1,Rank,int,Self&>::type                                       \
+	operator[] (size_type i)                                                                    \
+	{                                                                                           \
+		return internal::Proxy<Rank-1,Rank,int,Self&>(i, *this);                                  \
+	}                                                                                           \
+                                                                                              \
+	typename internal::Proxy<Rank-1,Rank,int,Self const&>::type                                 \
+	operator[] (size_type i) const                                                              \
+	{                                                                                           \
+		return internal::Proxy<Rank-1,Rank,int,Self const&>(i, *this);                            \
+	}                                                                                           \
+                                                                                              \
   reference get(MA_EXPAND_ARGS(P_rank, int))                                                  \
   {                                                                                           \
     MA_STATIC_CHECK(Rank==P_rank, INVALID_NUMBER_OF_ARGS_IN_CALL_OP);                         \
@@ -348,6 +457,20 @@ public:                                                                         
     return CONST_THIS->access_check( ToGlobal::idx(CONST_THIS->rdims(), indices) );           \
   };                                                                                          \
                                                                                               \
+                                                                                              \
+  inline                                                                                      \
+  reference access(size_type i)                                                               \
+  { return THIS->access(i);}                                                                  \
+                                                                                              \
+  inline                                                                                      \
+  const_reference access(size_type i) const                                                   \
+  { return CONST_THIS->access(i);}                                                            \
+                                                                                              \
+  int* rdims()                                                                                \
+  { return THIS->rdims(); }                                                                   \
+                                                                                              \
+  int const* rdims() const                                                                    \
+  { return CONST_THIS->rdims(); }                                                             \
                                                                                               \
   int maxDim() const                                                                          \
   {                                                                                           \
@@ -396,7 +519,7 @@ template<typename P_type, int P_rank, Options P_opts = MA_DEFAULT_MAJOR, typenam
 class GenericN : public P_MemBlock, public ArrayBase<GenericN<P_type,P_rank,P_opts,P_MemBlock>,P_rank>
 {
 protected:
-  typedef P_MemBlock          Base1;
+  typedef P_MemBlock                 Base1;
   typedef ArrayBase<GenericN,P_rank> Base2;
 
   typedef typename Base2::reference reference;
@@ -420,6 +543,7 @@ protected:
   using Base1::resize;
 
 public:
+  using Base2::operator[];
 
   GenericN() : Base1(), Base2(), m_rdims() {};
   //Array(Array const& ) = default;
@@ -436,7 +560,7 @@ public:
   int size() const
   { return Base1::size(); }
 
-protected:
+
 
   inline
   reference access(size_type i)
@@ -454,7 +578,7 @@ protected:
   const_reference access_check(size_type i) const
   { return P_MemBlock::at(i);}
 
-
+protected:
   // vecotr with rank sizes
   int* rdims()
   { return m_rdims; }
@@ -646,13 +770,6 @@ public:
   UserT const* data() const
   {return m_data; }
 
-  UserT& operator[] (int i)
-  { return m_data[i]; }
-
-  UserT const& operator[] (int i) const
-  { return m_data[i]; }
-
-protected: // used by base class
 
   inline
   reference access(size_type i)
@@ -671,7 +788,7 @@ protected: // used by base class
   { return m_data[i];}
 
 
-
+protected:
 
   // vecotr with rank sizes
   int* rdims()

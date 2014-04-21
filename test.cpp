@@ -15,7 +15,7 @@ using namespace marray;
 void test_constructors()
 {
   printf("test_constructors() ... ");
-  
+
   Array<double, 3>  A;
   Array<double, 1>  B(5);
   Array<double, 2>  C(2,3);
@@ -26,7 +26,7 @@ void test_constructors()
   Array<double, 7>  H(2,3,4,3,2,1,2);
   Array<double, 8>  I(2,3,4,3,2,1,2,3, /*value*/ 1.125);
   Array<double, 9>  J(2,3,4,3,2,1,2,3,4);
-  
+
   assert( A.size() == 0    );
   assert( B.size() == 5    );
   assert( C.size() == 6    );
@@ -50,7 +50,7 @@ void test_constructors()
   }
   catch (...)
   { }
-  
+
   // must not throw
   try {
     D(1,2,3);
@@ -63,9 +63,9 @@ void test_constructors()
 #define LOOP_TEST(M) \
   for (int i = 0; i < M.size(); ++i) \
   { \
-    assert(M[i] == 0); \
-    M[i] = i; \
-    assert(M[i] == i); \
+    assert(M.access(i) == 0); \
+    M.access(i) = i; \
+    assert(M.access(i) == i); \
   }
 
   LOOP_TEST(A)
@@ -93,13 +93,13 @@ void test_constructors()
   assert(J.dim(7) == 3);
   assert(J.dim(8) == 4);
 
-  
+
 }
 
 void test_constructors_int()
 {
   printf("test_constructors_int() ... ");
-  
+
   Array<int, 3>  A;
   Array<int, 1>  B(5);
   Array<int, 2>  C(2,3);
@@ -110,7 +110,7 @@ void test_constructors_int()
   Array<int, 7>  H(2,3,4,3,2,1,2);
   Array<int, 8>  I(2,3,4,3,2,1,2,3, /*value*/ 99);
   Array<int, 9>  J(2,3,4,3,2,1,2,3,4);
-  
+
   assert( A.size() == 0    );
   assert( B.size() == 5    );
   assert( C.size() == 6    );
@@ -134,7 +134,7 @@ void test_constructors_int()
   }
   catch (...)
   { }
-  
+
   // must not throw
   try {
     D(1,2,3);
@@ -147,9 +147,9 @@ void test_constructors_int()
 #define LOOP_TEST(M) \
   for (int i = 0; i < M.size(); ++i) \
   { \
-    assert(M[i] == 0); \
-    M[i] = i; \
-    assert(M[i] == i); \
+    assert(M.access(i) == 0); \
+    M.access(i) = i; \
+    assert(M.access(i) == i); \
   }
 
   LOOP_TEST(A)
@@ -177,115 +177,327 @@ void test_constructors_int()
   assert(J.dim(7) == 3);
   assert(J.dim(8) == 4);
 
-  
+
 }
 
 void test_RowMajor()
 {
   printf("test_RowMajor() ... ");
-  
-  Array<double, 3>  A(2,3,4);  // RowMajor by default
-  
-  assert(A.size() == 24);
-  
-  for (int i = 0; i < A.size(); ++i)
-    A[i] = i;
-  
-  int accum = 0;
-  for (int i = 0; i < A.dim(0); ++i)
-    for (int j = 0; j < A.dim(1); ++j)
-      for (int k = 0; k < A.dim(2); ++k)
-        assert( A(i,j,k) ==  accum++);
-  
-  
+
+  // 3x3 test
+  {
+    Array<double, 3>  A(2,3,4);  // RowMajor by default
+
+    assert(A.size() == 24);
+
+    for (int i = 0; i < A.size(); ++i)
+      A.access(i) = i;
+
+    int accum = 0;
+    for (int i = 0; i < A.dim(0); ++i)
+      for (int j = 0; j < A.dim(1); ++j)
+        for (int k = 0; k < A.dim(2); ++k)
+        {
+          assert( A(i,j,k)   ==  accum);
+          assert( A[i][j][k] ==  accum++);
+        }
+
+    Array<double, 3> const B(A);  // RowMajor by default
+
+    accum = 0;
+    for (int i = 0; i < B.dim(0); ++i)
+      for (int j = 0; j < B.dim(1); ++j)
+        for (int k = 0; k < B.dim(2); ++k)
+        {
+          assert( B(i,j,k)   ==  accum);
+          assert( B[i][j][k] ==  accum++);
+        }
+
+    accum = 0;
+    for (int i = 0; i < A.dim(0); ++i)
+      for (int j = 0; j < A.dim(1); ++j)
+        for (int k = 0; k < A.dim(2); ++k)
+        {
+          A[i][j][k] = accum--;
+          assert( A[i][j][k] ==  A(i,j,k));
+        }
+
+    for (int i = 0; i < A.size(); ++i)
+      assert( A.access(i) == -i );
+
+  }
+
+  // 2x2 test
+  {
+    Array<double, 2>  A(2,3);  // RowMajor by default
+
+    assert(A.size() == 6);
+
+    for (int i = 0; i < A.size(); ++i)
+      A.access(i) = i;
+
+    int accum = 0;
+    for (int i = 0; i < A.dim(0); ++i)
+      for (int j = 0; j < A.dim(1); ++j)
+        {
+          assert( A(i,j)   ==  accum);
+          assert( A[i][j]  ==  accum++);
+        }
+
+    Array<double, 2> const B(A);  // RowMajor by default
+
+    accum = 0;
+    for (int i = 0; i < B.dim(0); ++i)
+      for (int j = 0; j < B.dim(1); ++j)
+        {
+          assert( B(i,j)   ==  accum);
+          assert( B[i][j]  ==  accum++);
+        }
+
+    accum = 0;
+    for (int i = 0; i < A.dim(0); ++i)
+      for (int j = 0; j < A.dim(1); ++j)
+        {
+          A[i][j] = accum--;
+          assert( A[i][j] ==  A(i,j));
+        }
+
+    for (int i = 0; i < A.size(); ++i)
+      assert( A.access(i) == -i );
+
+  }
+
+  // 1x1 test
+  {
+    Array<double, 1>  A(2);  // RowMajor by default
+
+    assert(A.size() == 2);
+
+    for (int i = 0; i < A.size(); ++i)
+      A.access(i) = i;
+
+    int accum = 0;
+    for (int i = 0; i < A.dim(0); ++i)
+        {
+          assert( A(i)   ==  accum);
+          assert( A[i]  ==  accum++);
+        }
+
+    Array<double, 1> const B(A);  // RowMajor by default
+
+    accum = 0;
+    for (int i = 0; i < B.dim(0); ++i)
+        {
+          assert( B(i)   ==  accum);
+          assert( B[i]  ==  accum++);
+        }
+
+    accum = 0;
+    for (int i = 0; i < A.dim(0); ++i)
+        {
+          A[i] = accum--;
+          assert( A[i] ==  A(i));
+        }
+
+    for (int i = 0; i < A.size(); ++i)
+      assert( A.access(i) == -i );
+
+  }
+
+
 }
 
 void test_ColMajor()
 {
   printf("test_ColMajor() ... ");
-  
-  Array<double, 3, ColMajor> A(2,3,4);
- // Array<double, 3, ColMajor> B(2,3,4);
-  
-  assert(A.size() == 24);
-  
-  for (int i = 0; i < A.size(); ++i)
-    A[i] = i;  
-  
-  int accum = 0;
-  for (int k = 0; k < A.dim(2); ++k)
+
+  // 3x3 test
+  {
+    Array<double, 3, ColMajor>  A(2,3,4);  // RowMajor by default
+
+    assert(A.size() == 24);
+
+    for (int i = 0; i < A.size(); ++i)
+      A.access(i) = i;
+
+    int accum = 0;
+    for (int k = 0; k < A.dim(2); ++k)
+      for (int j = 0; j < A.dim(1); ++j)
+        for (int i = 0; i < A.dim(0); ++i)
+        {
+          assert( A(i,j,k)   ==  accum);
+          assert( A[i][j][k] ==  accum++);
+        }
+
+    Array<double, 3, ColMajor> const B(A);  // RowMajor by default
+
+    accum = 0;
+    for (int k = 0; k < B.dim(2); ++k)
+      for (int j = 0; j < B.dim(1); ++j)
+        for (int i = 0; i < B.dim(0); ++i)
+        {
+          assert( B(i,j,k)   ==  accum);
+          assert( B[i][j][k] ==  accum++);
+        }
+
+    accum = 0;
+    for (int k = 0; k < A.dim(2); ++k)
+      for (int j = 0; j < A.dim(1); ++j)
+        for (int i = 0; i < A.dim(0); ++i)
+        {
+          A[i][j][k] = accum--;
+          assert( A[i][j][k] ==  A(i,j,k));
+        }
+
+    for (int i = 0; i < A.size(); ++i)
+      assert( A.access(i) == -i );
+
+  }
+
+  // 2x2 test
+  {
+    Array<double, 2, ColMajor>  A(2,3);  // RowMajor by default
+
+    assert(A.size() == 6);
+
+    for (int i = 0; i < A.size(); ++i)
+      A.access(i) = i;
+
+    int accum = 0;
     for (int j = 0; j < A.dim(1); ++j)
       for (int i = 0; i < A.dim(0); ++i)
-        assert( A(i,j,k) ==  accum++);
-  
-  
+        {
+          assert( A(i,j)   ==  accum);
+          assert( A[i][j]  ==  accum++);
+        }
+
+    Array<double, 2, ColMajor> const B(A);  // RowMajor by default
+
+    accum = 0;
+    for (int j = 0; j < B.dim(1); ++j)
+      for (int i = 0; i < B.dim(0); ++i)
+        {
+          assert( B(i,j)   ==  accum);
+          assert( B[i][j]  ==  accum++);
+        }
+
+    accum = 0;
+    for (int j = 0; j < A.dim(1); ++j)
+      for (int i = 0; i < A.dim(0); ++i)
+        {
+          A[i][j] = accum--;
+          assert( A[i][j] ==  A(i,j));
+        }
+
+    for (int i = 0; i < A.size(); ++i)
+      assert( A.access(i) == -i );
+
+  }
+
+  // 1x1 test
+  {
+    Array<double, 1, ColMajor>  A(2);  // RowMajor by default
+
+    assert(A.size() == 2);
+
+    for (int i = 0; i < A.size(); ++i)
+      A.access(i) = i;
+
+    int accum = 0;
+    for (int i = 0; i < A.dim(0); ++i)
+        {
+          assert( A(i)  ==  accum);
+          assert( A[i]  ==  accum++);
+        }
+
+    Array<double, 1, ColMajor> const B(A);  // RowMajor by default
+
+    accum = 0;
+    for (int i = 0; i < B.dim(0); ++i)
+        {
+          assert( B(i)  ==  accum);
+          assert( B[i]  ==  accum++);
+        }
+
+    accum = 0;
+    for (int i = 0; i < A.dim(0); ++i)
+        {
+          A[i] = accum--;
+          assert( A[i] ==  A(i));
+        }
+
+    for (int i = 0; i < A.size(); ++i)
+      assert( A.access(i) == -i );
+
+  }
+
 }
 
 void test_InitializerRowM()
 {
   printf("test_InitializerRowM() ... ");
-  
+
   Array<double, 3> A(2,3,4);
-  
+
   A << 0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23;
-  
+
   int accum = 0;
   for (int i = 0; i < A.dim(0); ++i)
     for (int j = 0; j < A.dim(1); ++j)
       for (int k = 0; k < A.dim(2); ++k)
-        assert( A(i,j,k) ==  accum++);  
-  
-  
+        assert( A(i,j,k) ==  accum++);
+
+
 }
 
 void test_InitializerColM()
 {
   printf("test_InitializerColM() ... ");
-  
+
   Array<double, 3, ColMajor> B(2,3,4);
-  
+
   B << 0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23;
-  
+
   int accum = 0;
   for (int k = 0; k < B.dim(2); ++k)
     for (int j = 0; j < B.dim(1); ++j)
       for (int i = 0; i < B.dim(0); ++i)
-        assert( B(i,j,k) ==  accum++);  
-  
-  
+        assert( B(i,j,k) ==  accum++);
+
+
 }
 
 void test_CopyConstructor()
 {
   printf("test_CopyConstructor() ... ");
-  
+
   Array<double, 3> B(2,3,4);
-  
+
   B << 0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23;
-  
+
   Array<double, 3> A(B);
-  
+
   int accum = 0;
   for (int i = 0; i < A.dim(0); ++i)
     for (int j = 0; j < A.dim(1); ++j)
       for (int k = 0; k < A.dim(2); ++k)
-        assert( A(i,j,k) ==  accum++);    
-  
-  
+        assert( A(i,j,k) ==  accum++);
+
+
 }
 
 void test_Assign()
 {
   printf("test_Assign() ... ");
-  
+
   Array<double, 3> B(2,3,4);
-  
+
   B << 0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23;
-  
+
   Array<double, 3> A;
-  
+
   A = B;
-  
+
   int accum = 0;
   for (int i = 0; i < A.dim(0); ++i)
     for (int j = 0; j < A.dim(1); ++j)
@@ -298,50 +510,50 @@ void test_Assign()
   for (int i = 0; i < B.dim(0); ++i)
     for (int j = 0; j < B.dim(1); ++j)
       for (int k = 0; k < B.dim(2); ++k)
-        assert( B(i,j,k) >= 0  );  
-  
-  
+        assert( B(i,j,k) >= 0  );
+
+
 }
 
 void test_Reshape()
 {
   printf("test_Reshape() ... ");
-  
+
   Array<double, 3> B(2,3,4);
-  
+
   B << 0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23;
 
   B.reshape(4,3,1);
-  
+
   assert(B.dim(0) == 4);
   assert(B.dim(1) == 3);
   assert(B.dim(2) == 1);
   assert(B.rank() == 3);
   assert(B.size() == 12);
-  
+
   int accum = 0;
   for (int i = 0; i < B.dim(0); ++i)
     for (int j = 0; j < B.dim(1); ++j)
       for (int k = 0; k < B.dim(2); ++k)
-        assert( B(i,j,k) ==  accum++);     
-  
-  B.reshape(4,4,4);  
-  
+        assert( B(i,j,k) ==  accum++);
+
+  B.reshape(4,4,4);
+
   assert(B.dim(0) == 4);
   assert(B.dim(1) == 4);
-  assert(B.dim(2) == 4);  
+  assert(B.dim(2) == 4);
 
   assert(B.size() == 64);
-  
+
   accum = 0;
   for (int i = 0; i < B.dim(0); ++i)
     for (int j = 0; j < B.dim(1); ++j)
       for (int k = 0; k < B.dim(2); ++k)
         B(i,j,k) =  accum++;
-  
+
   for (int i = 0; i < B.size(); ++i)
-    assert(B[i] == i);
- 
+    assert(B.access(i) == i);
+
   double const some_val = 1.25;
   B.reshape(8,4,4, some_val);
   for (int i = 0; i < B.dim(0); ++i)
@@ -357,38 +569,39 @@ void test_Reshape()
           assert(B(i,j,k) == some_val);
       }
 
-  
+
 }
 
 void test_Amaps()
 {
   printf("test_Amaps() ... ");
-  
+
   Array<double, 3> B(2,3,4);
-  
+
   B << 0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23;
-  
+
   Amaps<double, 2> A(B.data(), 6, 4);
-  
+
   assert(A.size() == 24);
   assert(B.size() == 24);
-  
+
   assert(A.dim(0) == 6);
   assert(A.dim(1) == 4);
-  
+
   int acc = 0;
   for (int i = 0; i < A.dim(0); ++i)
     for (int j = 0; j < A.dim(1); ++j)
     {
       assert(A(i,j) == acc);
-      A(i,j) = 23 - acc;
+      assert(A[i][j] == acc);
+      A[i][j] = 23 - acc;
       ++acc;
     }
-    
+
   // check if reflects on B
   for (int i = 0; i < B.size(); ++i)
-    assert( B[i] == 23-i );
-  
+    assert( B.access(i) == 23-i );
+
   Amaps<double, 2> C(A);
 
   assert(C.size() == 24);
@@ -407,21 +620,21 @@ void test_Amaps()
 
   // check if reflects on B
   for (int i = 0; i < B.size(); ++i)
-    assert( B[i] == i );  
-  
+    assert( B.access(i) == i );
+
   new(&A) Amaps<double, 2>(B.data(), 12, 2);
-  
+
   assert(A.size() == 24);
   assert(A.rank() == 2);
   assert(A.dim(0) == 12);
-  assert(A.dim(1) == 2);  
-  
+  assert(A.dim(1) == 2);
+
   A << -1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1;
-  
+
   for (int i = 0; i < B.size(); ++i)
-    assert( B[i] == -1 );
-  
-  
+    assert( B.access(i) == -1 );
+
+
 }
 
 void test_deque()
@@ -429,25 +642,25 @@ void test_deque()
   printf("test_deque() ... ");
 
   Array<int, 3, RowMajor, std::deque<int> > B(600,3,10);
-  
+
   for(int i=0; i<B.size(); ++i)
-    B[i] = i;
+    B.access(i) = i;
 
   for(int i=0; i<B.dim(0); ++i)
     for (int j=0; j<B.dim(1); ++j)
       for (int k=0; k<B.dim(2); ++k)
         assert(B(i,j,k) == i*B.dim(2)*B.dim(1) + j*B.dim(2) + k);
 
-  
+
 }
 
 void test_deque_iterators()
 {
   typedef Array<int, 3, RowMajor, std::deque<int> > Array_t;
-  
+
   Array_t B(600,3,10);
   Array_t::iterator it, end;
-  
+
   int c = 0;
   for(it = B.begin(); it < B.end(); ++it)
     *it = c++;
@@ -457,7 +670,7 @@ void test_deque_iterators()
       for (int k=0; k<B.dim(2); ++k)
         assert(B(i,j,k) == i*B.dim(2)*B.dim(1) + j*B.dim(2) + k);
 
-  
+
 }
 
 #define TEST(fun_name) printf( #fun_name "() ... "); \
@@ -467,12 +680,12 @@ void test_deque_iterators()
 
 int main()
 {
-  TEST(test_constructors    );  
-  TEST(test_constructors_int);  
-  TEST(test_RowMajor        );  
-  TEST(test_ColMajor        );  
-  TEST(test_InitializerRowM );  
-  TEST(test_InitializerColM );  
+  TEST(test_constructors    );
+  TEST(test_constructors_int);
+  TEST(test_RowMajor        );
+  TEST(test_ColMajor        );
+  TEST(test_InitializerRowM );
+  TEST(test_InitializerColM );
   TEST(test_CopyConstructor );
   TEST(test_Assign          );
   TEST(test_Reshape         );
