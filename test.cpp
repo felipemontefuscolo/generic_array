@@ -201,8 +201,9 @@ void test_RowMajor()
       for (index j = 0; j < A.dim(1); ++j)
         for (index k = 0; k < A.dim(2); ++k)
         {
-          assert( A(i,j,k)   ==  accum);
-          assert( A[i][j][k] ==  accum++);
+          assert( A(i,j,k)          ==  accum);
+          assert( A[i][j][k]        ==  accum);
+          assert( A(listify(i,j,k)) ==  accum++);
         }
 
     Array<double, 3> const B(A);  // RowMajor by default

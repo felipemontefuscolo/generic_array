@@ -12,6 +12,7 @@
 #include <vector>
 #include <stdexcept>
 #include <tr1/type_traits>
+#include "listify.hpp"
 
 namespace marray {
 
@@ -406,12 +407,30 @@ public:                                                                         
     return THIS->access( ToGlobal::idx(THIS->rdims(), indices) );                             \
   }                                                                                           \
                                                                                               \
+  reference operator() (size_type const indices[])                                            \
+  {                                                                                           \
+    internal::BoundCheck<Rank>::check(THIS->rdims(), indices);                                \
+                                                                                              \
+    typedef typename internal::IdxComputationTraits<Rank, isRowMajor>::type ToGlobal;         \
+                                                                                              \
+    return THIS->access( ToGlobal::idx(THIS->rdims(), indices) );                             \
+  }                                                                                           \
+                                                                                              \
   const_reference operator() (MA_EXPAND_ARGS(P_rank, size_type)) const                        \
   {                                                                                           \
     MA_STATIC_CHECK(Rank==P_rank, INVALID_NUMBER_OF_ARGS_IN_CALL_OP);                         \
                                                                                               \
     size_type const indices[] = {MA_EXPAND_SEQ(P_rank)};                                      \
                                                                                               \
+    internal::BoundCheck<Rank>::check(CONST_THIS->rdims(), indices);                          \
+                                                                                              \
+    typedef typename internal::IdxComputationTraits<Rank, isRowMajor>::type ToGlobal;         \
+                                                                                              \
+    return CONST_THIS->access( ToGlobal::idx(CONST_THIS->rdims(), indices) );                 \
+  };                                                                                          \
+                                                                                              \
+  const_reference operator() (size_type const indices[]) const                                \
+  {                                                                                           \
     internal::BoundCheck<Rank>::check(CONST_THIS->rdims(), indices);                          \
                                                                                               \
     typedef typename internal::IdxComputationTraits<Rank, isRowMajor>::type ToGlobal;         \
@@ -430,32 +449,6 @@ public:                                                                         
 	{                                                                                           \
 		return internal::Proxy<Rank-1,Rank,size_type,Self const&>(i, *this);                      \
 	}                                                                                           \
-                                                                                              \
-  reference get(MA_EXPAND_ARGS(P_rank, int))                                                  \
-  {                                                                                           \
-    MA_STATIC_CHECK(Rank==P_rank, INVALID_NUMBER_OF_ARGS_IN_CALL_OP);                         \
-                                                                                              \
-    int const indices[] = {MA_EXPAND_SEQ(P_rank)};                                            \
-                                                                                              \
-    internal::BoundCheck<Rank>::check(THIS->rdims(), indices);                                \
-                                                                                              \
-    typedef typename internal::IdxComputationTraits<Rank, isRowMajor>::type ToGlobal;         \
-                                                                                              \
-    return THIS->access_check( ToGlobal::idx(THIS->rdims(), indices) );                       \
-  }                                                                                           \
-                                                                                              \
-  const_reference get(MA_EXPAND_ARGS(P_rank, int)) const                                      \
-  {                                                                                           \
-    MA_STATIC_CHECK(Rank==P_rank, INVALID_NUMBER_OF_ARGS_IN_CALL_OP);                         \
-                                                                                              \
-    int const indices[] = {MA_EXPAND_SEQ(P_rank)};                                            \
-                                                                                              \
-    internal::BoundCheck<Rank>::check(CONST_THIS->rdims(), indices);                          \
-                                                                                              \
-    typedef typename internal::IdxComputationTraits<Rank, isRowMajor>::type ToGlobal;         \
-                                                                                              \
-    return CONST_THIS->access_check( ToGlobal::idx(CONST_THIS->rdims(), indices) );           \
-  };                                                                                          \
                                                                                               \
                                                                                               \
   inline                                                                                      \
