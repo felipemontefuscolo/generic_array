@@ -1,7 +1,7 @@
 # define boost directory
 #BOOST_DIR=
-#CXX=g++
-CXX=clang++
+CXX=g++
+#CXX=clang++
 #CPPFLAGS= -O3 -march=native -mtune=native --fast-math -DNDEBUG -Wall -std=c++98 -Wextra -I.. -I$(BOOST_DIR) -pedantic
 CPPFLAGS= -O3 -march=native -mtune=native  -DNDEBUG -Wall -std=c++98 -Wextra -I.. -I$(BOOST_DIR) -pedantic
 #CPPFLAGS= -Wall -std=c++98 -Wextra -I.. -I$(BOOST_DIR) -pedantic

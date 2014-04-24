@@ -26,7 +26,7 @@ void test_constructors()
   Array<double, 5>  F(2,3,4,3,2);
   Array<double, 6>  G(2,3,4,3,2,1);
   Array<double, 7>  H(2,3,4,3,2,1,2);
-  Array<double, 8>  I(2,3,4,3,2,1,2,3, /*value*/ 1.125);
+  Array<double, 8>  I(2,3,4,3,2,1,2,3);
   Array<double, 9>  J(2,3,4,3,2,1,2,3,4);
 
   assert( A.size() == 0    );
@@ -40,8 +40,6 @@ void test_constructors()
   assert( I.size() == 864  );
   assert( J.size() == 3456 );
 
-  for (index i=0; i<I.size(); ++i)
-	assert( I.at(i) == 1.125 );
 
 #ifdef DEBUG
   // must throw
@@ -78,7 +76,7 @@ void test_constructors()
   LOOP_TEST(F)
   LOOP_TEST(G)
   LOOP_TEST(H)
-  //LOOP_TEST(I)
+  LOOP_TEST(I)
   LOOP_TEST(J)
 
   assert(A.dim(0) == 0);
@@ -111,7 +109,7 @@ void test_constructors_int()
   Array<int, 5>  F(2,3,4,3,2);
   Array<int, 6>  G(2,3,4,3,2,1);
   Array<int, 7>  H(2,3,4,3,2,1,2);
-  Array<int, 8>  I(2,3,4,3,2,1,2,3, /*value*/ 99);
+  Array<int, 8>  I(2,3,4,3,2,1,2,3);
   Array<int, 9>  J(2,3,4,3,2,1,2,3,4);
 
   assert( A.size() == 0    );
@@ -124,9 +122,6 @@ void test_constructors_int()
   assert( H.size() == 288  );
   assert( I.size() == 864  );
   assert( J.size() == 3456 );
-
-  for (index i=0; i<I.size(); ++i)
-	assert( I.at(i) == 99 );
 
 #ifdef DEBUG
   // must throw
@@ -163,7 +158,7 @@ void test_constructors_int()
   LOOP_TEST(F)
   LOOP_TEST(G)
   LOOP_TEST(H)
-  //LOOP_TEST(I)
+  LOOP_TEST(I)
   LOOP_TEST(J)
 
   assert(A.dim(0) == 0);
@@ -203,7 +198,7 @@ void test_RowMajor()
         {
           assert( A(i,j,k)          ==  accum);
           assert( A[i][j][k]        ==  accum);
-          assert( A(listify(i,j,k)) ==  accum++);
+          assert( A(listify(i,j,k).v) ==  accum++);
         }
 
     Array<double, 3> const B(A);  // RowMajor by default
@@ -561,17 +556,23 @@ void test_Reshape()
   for (index i = 0; i < B.size(); ++i)
     assert(B.access(i) == i);
 
+
   double const some_val = 1.25;
-  B.reshape(8,4,4, some_val);
-  for (index i = 0; i < B.dim(0); ++i)
-    for (index j = 0; j < B.dim(1); ++j)
-      for (index k = 0; k < B.dim(2); ++k)
+  B.reshape(&listify(8,4,4)[0], some_val);
+  // or
+  // B.reshape(listify(8,4,4).v, some_val);
+  for (int i = 0; (index)i < B.dim(0); ++i)
+    for (int j = 0; (index)j < B.dim(1); ++j)
+      for (int k = 0; (index)k < B.dim(2); ++k)
       {
         if (i<4)
           // WARNING: it is not true for other dimensions because the elements
           // is stored in a contiguous memory block. It is not true
           // for ColMajor too.
-          assert(B(i,j,k) == i*B.dim(1)*B.dim(2) + j*B.dim(2) + k);
+          if (i%2 == 0)
+            assert(B(i,j,k) == i*B.dim(1)*B.dim(2) + j*B.dim(2) + k); // testing both interfaces
+          else
+            assert(B(listify(i,j,k).v) == i*B.dim(1)*B.dim(2) + j*B.dim(2) + k);
         else
           assert(B(i,j,k) == some_val);
       }
@@ -678,6 +679,7 @@ void test_deque_iterators()
         assert(B(i,j,k) == i*B.dim(2)*B.dim(1) + j*B.dim(2) + k);
 
 
+  //Array<index, 3, RowMajor, index[3]> A;
 }
 
 #define TEST(fun_name) printf( #fun_name "() ... "); \

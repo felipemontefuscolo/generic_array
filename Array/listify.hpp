@@ -14,7 +14,7 @@ namespace marray {
 namespace details
 {
 
-template<class T, int N> struct ListAux{};
+template<class T, int N> struct ListInit{};
 
 // expand to `type a0, type a1, type a2, ... `
 #define MA_EXPAND_ARGS1(type_)                          type_ a0
@@ -47,17 +47,33 @@ template<class T, int N> struct ListAux{};
 #define MA_EXPAND_SEQ(N) MA_EXPAND_SEQ_(N)
 
 // N = num of args
-#define MA_IMPL_LISTAUX(N)                  \
-    template<class T>                       \
-    struct ListAux<T,N>                     \
-    {                                       \
-      T v[N];                               \
-      inline ListAux(MA_EXPAND_ARGS(N, T))  \
-      {                                     \
-        MA_EXPAND_SEQ(N)                    \
-      };                                    \
-      inline operator T* () {return v;}     \
+#define MA_IMPL_LISTAUX(N)                                  \
+    template<class T>                                       \
+    struct ListInit<T,N>                                    \
+    {                                                       \
+      T v[N];                                               \
+      inline ListInit(MA_EXPAND_ARGS(N, T))                 \
+      {                                                     \
+        MA_EXPAND_SEQ(N)                                    \
+      };                                                    \
+      typedef std::size_t size_type;                        \
+      typedef T* pointer;                                   \
+      typedef T const* const_pointer;                       \
+      typedef T& reference;                                 \
+      typedef T const& const_reference;                     \
+                                                            \
+      inline operator pointer () {return v;}                \
+      inline operator const_pointer () const {return v;}    \
+      inline reference operator[](size_type i)              \
+      { return v[i]; }                                      \
+      inline const_reference operator[](size_type i) const  \
+      { return v[i]; }                                      \
+      inline pointer operator() ()                          \
+      { return v; }                                         \
+      inline const_pointer operator() () const              \
+      { return v; }                                         \
     };
+
 
 MA_IMPL_LISTAUX( 1)
 MA_IMPL_LISTAUX( 2)
@@ -74,12 +90,12 @@ MA_IMPL_LISTAUX(10)
 
 } // end namespace details
 
-#define MA_IMPL_LISTOF(N)                                 \
-                                                          \
-template<class T>                                         \
-details::ListAux<T,N> listify(MA_EXPAND_ARGS(N, T))       \
-{                                                         \
-  return details::ListAux<T,N>(MA_EXPAND_ARGS(N, (T) ));  \
+#define MA_IMPL_LISTOF(N)                                  \
+                                                           \
+template<class T>                                          \
+details::ListInit<T,N> listify(MA_EXPAND_ARGS(N, T))       \
+{                                                          \
+  return details::ListInit<T,N>(MA_EXPAND_ARGS(N, (T) ));  \
 }
 
 MA_IMPL_LISTOF( 1)
@@ -100,15 +116,15 @@ MA_IMPL_LISTOF(10)
 #undef MA_IMPL_LISTAUX
 #undef MA_EXPAND_SEQ
 #undef MA_EXPAND_SEQ_
-#undef MA_EXPAND_SEQ1 
-#undef MA_EXPAND_SEQ2 
-#undef MA_EXPAND_SEQ3 
-#undef MA_EXPAND_SEQ4 
-#undef MA_EXPAND_SEQ5 
-#undef MA_EXPAND_SEQ6 
-#undef MA_EXPAND_SEQ7 
-#undef MA_EXPAND_SEQ8 
-#undef MA_EXPAND_SEQ9 
+#undef MA_EXPAND_SEQ1
+#undef MA_EXPAND_SEQ2
+#undef MA_EXPAND_SEQ3
+#undef MA_EXPAND_SEQ4
+#undef MA_EXPAND_SEQ5
+#undef MA_EXPAND_SEQ6
+#undef MA_EXPAND_SEQ7
+#undef MA_EXPAND_SEQ8
+#undef MA_EXPAND_SEQ9
 #undef MA_EXPAND_SEQ10
 #undef MA_EXPAND_ARGS1
 #undef MA_EXPAND_ARGS2

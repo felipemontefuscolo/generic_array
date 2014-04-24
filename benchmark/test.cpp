@@ -24,7 +24,7 @@ void bench_10x10()
   ImageArrayType boostMatrix(boost::extents[X_SIZE][Y_SIZE]);
 
   // Create the native array
-  double *nativeMatrix = new double [X_SIZE * Y_SIZE];
+  volatile double *nativeMatrix = new double [X_SIZE * Y_SIZE];
 
   
   
