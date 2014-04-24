@@ -590,9 +590,17 @@ protected:
 };
 
 
+namespace internal
+{
+  template<class T>
+  struct IsStaticArray { static const bool value = 0;};
 
+  template<class T, std::size_t N>
+  struct IsStaticArray<T[N]> { static const bool value = 1;};
 
-template<typename P_type, int P_rank, Options P_opts = MA_DEFAULT_MAJOR, typename P_MemBlock = std::vector<P_type>, std::size_t P_maxsize = 0 >
+}
+
+template<typename P_type, int P_rank, Options P_opts = MA_DEFAULT_MAJOR, typename P_MemBlock = std::vector<P_type>, bool hasSizeLimit = internal::IsStaticArray<P_MemBlock>::value >
 class Array : public GenericN<P_type,P_rank,P_opts,P_MemBlock>
 {
   typedef GenericN<P_type,P_rank,P_opts,P_MemBlock> Base0;
@@ -600,6 +608,8 @@ class Array : public GenericN<P_type,P_rank,P_opts,P_MemBlock>
   typedef typename Base0::Base1  Base1;
   typedef typename Base0::Base2  Base2;
 
+  template<typename T, int R, Options O, typename M, bool L>
+  friend class Array;
 
 public:
 
@@ -615,12 +625,21 @@ public:
   typedef P_type UserT;
   static const int Rank = P_rank;
   static const bool isRowMajor = P_opts & RowMajor;
+  static const Options Opts = P_opts;
 
   Array() {};
 
   internal::ListInitializationSwitch<UserT, UserT*> operator<<(const_reference x)
   {
     return internal::ListInitializationSwitch<UserT, UserT*>(this->data(), x);
+  }
+
+  template<typename Q_MemBlock, bool Q_hasSizeLimit>
+  Array(Array<UserT,Rank,Opts,Q_MemBlock,Q_hasSizeLimit> const& x)
+  {
+    this->resize(x.size());
+    std::copy(x.begin(), x.end(), this->begin());
+    std::copy(x.rdims(), x.rdims()+Rank, Base0::rdims());
   }
 
   template<class T>
@@ -698,13 +717,31 @@ public:
 };
 
 
-
-#if 0
-template<typename P_type, int P_rank, Options P_opts, std::size_t P_maxsize, typename P_storage>
-class Array<P_type,P_rank,P_opts,P_storage,P_maxsize> : public ArrayBase< Array<P_type,P_rank,P_opts,P_storage,P_maxsize>, P_rank, P_opts>
+//
+// Size-Limited version
+//
+template<typename P_type, int P_rank, Options P_opts, typename P_MemBlock >
+class Array<P_type, P_rank, P_opts, P_MemBlock, true> : public ArrayBase< Array<P_type, P_rank, P_opts, P_MemBlock, true>, P_rank, P_opts>
 {
 
   typedef ArrayBase<Array,P_rank,P_opts> Base;
+
+
+  friend class ArrayBase<Array,P_rank,P_opts>;
+  template<typename T, int R, Options O, typename M, bool L>
+  friend class Array;
+
+  // static checking
+  template<class T, bool Err>
+  struct ERROR_INCOMPATIBLE_TYPE_AND_STORAGE_TYPE;
+
+  template<class T>
+  struct ERROR_INCOMPATIBLE_TYPE_AND_STORAGE_TYPE<T,true> {};
+
+  enum { Dummy1 = sizeof(ERROR_INCOMPATIBLE_TYPE_AND_STORAGE_TYPE<Array, std::tr1::is_same<P_type,typename std::tr1::remove_extent<P_MemBlock>::type>::value>) };
+
+
+public:
 
   typedef typename Base::reference        reference;
   typedef typename Base::const_reference  const_reference;
@@ -715,22 +752,24 @@ class Array<P_type,P_rank,P_opts,P_storage,P_maxsize> : public ArrayBase< Array<
   typedef typename Base::pointer          pointer;
   typedef typename Base::const_pointer    const_pointer;
 
-  friend class ArrayBase<Array,P_rank,P_opts>;
-
-  static const std::size_t MaxSize = P_maxsize;
-public:
-
+  static const std::size_t MaxSize = sizeof(P_MemBlock)/sizeof(P_type);
   typedef P_type UserT;
   static const int Rank = Base::Rank;
   static const bool isRowMajor = Base::isRowMajor;
+  static const Options Opts = P_opts;
 
 private:
   UserT        m_data[MaxSize];
   size_type    m_size;
   size_type    m_rdims[Rank];
 
-  Array();
+
 public:
+
+
+
+  Array() : m_data(), m_size(), m_rdims() {};
+
   //Array(Array const& ) = default;
   //Array& operator<< (Array const&) = default;
 
@@ -739,32 +778,85 @@ public:
     return internal::ListInitializationSwitch<UserT, UserT*>(this->data(), x);
   }
 
-#define MA_ARRAY_CONSTRUCTOR(n_args)                                                                 \
-  Array(MA_EXPAND_ARGS(n_args, size_type))                                                           \
-  {                                                                                                  \
-    MA_STATIC_CHECK(n_args == Rank, TOO_FEW_ARGUMENTS_IN_ARRAY_CONSTRUCTOR);                         \
-                                                                                                     \
-    size_type const new_dims[] = { MA_EXPAND_SEQ(n_args) };                                          \
-    m_size = 1;                                                                                      \
-    for (int i = 0; i < Rank; ++i)                                                                   \
-    {                                                                                                \
-      internal::assertTrue(new_dims[i] > 0, "**ERROR**: Array<>: dimension must be greater than 0"); \
-      m_rdims[i] = new_dims[i];                                                                      \
-      m_size *= new_dims[i];                                                                         \
-    }                                                                                                \
+  template<typename Q_MemBlock, bool Q_hasSizeLimit>
+  Array(Array<UserT,Rank,Opts,Q_MemBlock,Q_hasSizeLimit> const& x) : m_size(x.size())
+  {
+    std::copy(x.begin(), x.end(), m_data);
+    std::copy(x.m_rdims, x.m_rdims+Rank, m_rdims);
   }
 
-  MA_ARRAY_CONSTRUCTOR( 1)
-  MA_ARRAY_CONSTRUCTOR( 2)
-  MA_ARRAY_CONSTRUCTOR( 3)
-  MA_ARRAY_CONSTRUCTOR( 4)
-  MA_ARRAY_CONSTRUCTOR( 5)
-  MA_ARRAY_CONSTRUCTOR( 6)
-  MA_ARRAY_CONSTRUCTOR( 7)
-  MA_ARRAY_CONSTRUCTOR( 8)
-  MA_ARRAY_CONSTRUCTOR( 9)
-  MA_ARRAY_CONSTRUCTOR(10)
-#undef MA_ARRAY_CONSTRUCTOR
+  template<class T>
+  Array(T const new_dims[], UserT val) : m_size()
+  { reshape(new_dims, val); }
+
+  template<class T>
+  Array(T const new_dims[]) : m_size()
+  { reshape(new_dims); }
+
+  template<class T>
+  void reshape(T const new_dims[], UserT const& val)
+  {
+    size_type new_size = 1;
+    for (int i = 0; i < Rank; ++i)
+    {
+      internal::assertTrue(new_dims[i] > 0, "**ERROR**: Array<>: dimension must be greater than 0");
+      m_rdims[i] = new_dims[i];
+      new_size *= new_dims[i];
+    }
+
+    this->resize(new_size, val);
+  }
+
+  template<class T>
+  void reshape(T const new_dims[])
+  {
+    size_type new_size = 1;
+    for (int i = 0; i < Rank; ++i)
+    {
+      internal::assertTrue(new_dims[i] > 0, "**ERROR**: Array<>: dimension must be greater than 0");
+      m_rdims[i] = new_dims[i];
+      new_size *= new_dims[i];
+    }
+
+    this->resize(new_size);
+  }
+
+
+#define MA_IMPLEMENT_FUN(n_args)                                                                       \
+  Array(MA_EXPAND_ARGS(n_args, size_type)) : m_size()                                                  \
+  {                                                                                                    \
+    MA_STATIC_CHECK(n_args == Rank, TOO_FEW_ARGUMENTS_IN_CONSTRUCTOR);                                 \
+    reshape(MA_EXPAND_SEQ(n_args));                                                                    \
+  }                                                                                                    \
+                                                                                                       \
+  void reshape(MA_EXPAND_ARGS(n_args, size_type))                                                      \
+  {                                                                                                    \
+    MA_STATIC_CHECK(n_args == Rank, TOO_FEW_ARGUMENTS_IN_RESHAPE);                                     \
+    size_type const new_dims[] = { MA_EXPAND_SEQ(n_args) };                                            \
+                                                                                                       \
+    size_type new_size = 1;                                                                            \
+    for (int i = 0; i < Rank; ++i)                                                                     \
+    {                                                                                                  \
+      internal::assertTrue(new_dims[i] > 0, "**ERROR**: Array<>: dimension must be greater than 0");   \
+      m_rdims[i] = new_dims[i];                                                                        \
+      new_size *= new_dims[i];                                                                         \
+    }                                                                                                  \
+    this->resize(new_size);                                                                            \
+                                                                                                       \
+  }
+
+  MA_IMPLEMENT_FUN( 1)
+  MA_IMPLEMENT_FUN( 2)
+  MA_IMPLEMENT_FUN( 3)
+  MA_IMPLEMENT_FUN( 4)
+  MA_IMPLEMENT_FUN( 5)
+  MA_IMPLEMENT_FUN( 6)
+  MA_IMPLEMENT_FUN( 7)
+  MA_IMPLEMENT_FUN( 8)
+  MA_IMPLEMENT_FUN( 9)
+  MA_IMPLEMENT_FUN(10)
+#undef MA_IMPLEMENT_FUN
+
 
 
   //internal::ListInitializationSwitch<Array, UserT*> operator<<(UserT const& x)
@@ -799,8 +891,40 @@ public:
   const_reference access(size_type i) const
   { return m_data[i];}
 
+  inline
+  iterator begin()
+  { return m_data; }
+
+  inline
+  const_iterator begin() const
+  { return m_data; }
+
+  inline
+  iterator end()
+  { return m_data+m_size; }
+
+  inline
+  const_iterator end() const
+  { return m_data+m_size; }
 
 protected:
+
+  void resize(size_type n)
+  {
+    internal::assertTrue(n <= MaxSize, "**ERROR**: Size limit exceeded");
+    for (size_type i = m_size; i < n; ++i)
+      m_data[i] = UserT();
+    m_size = n;
+  }
+
+  void resize(size_type n, UserT const& val)
+  {
+    internal::assertTrue(n <= MaxSize, "**ERROR**: Size limit exceeded");
+    for (size_type i = m_size; i < n; ++i)
+      m_data[i] = val;
+    m_size = n;
+  }
+
 
   // vecotr with rank sizes
   size_type* rdims()
@@ -809,7 +933,6 @@ protected:
   size_type const* rdims() const
   { return m_rdims; }
 };
-#endif
 
 
 //               db
@@ -963,9 +1086,8 @@ struct Traits<GenericN<T,A,O,M> > {
 
 };
 
-template<typename T, int R, Options O, std::size_t M>
-struct Traits<Array<T,R,O,T[M],M> > {
-
+template<typename T, int R, Options O, typename M>
+struct Traits<Array<T,R,O,M,true> > {
 
   typedef T UserT;
 
@@ -979,6 +1101,7 @@ struct Traits<Array<T,R,O,T[M],M> > {
   typedef  UserT const*    const_pointer;
 
 };
+
 
 template<class T, int A, Options O>
 struct Traits<Amaps<T,A,O> > {
@@ -994,6 +1117,8 @@ struct Traits<Amaps<T,A,O> > {
   typedef  UserT const*    const_pointer;
 
 };
+
+
 
 
 }
