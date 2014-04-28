@@ -8,6 +8,8 @@
 #ifndef MA_LISTIFY_HPP
 #define MA_LISTIFY_HPP
 
+#include <cstddef>
+
 namespace marray {
 
 
