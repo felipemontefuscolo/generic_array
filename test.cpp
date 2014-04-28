@@ -718,8 +718,17 @@ void test_Reshape()
             assert(B(i,j,k) == some_val);
         }
 
+    B.clear();
+    for (unsigned i=0; i<3; ++i)
+      assert(B.dim(i) == 0);
 
-
+    B.reshape(listify(2,3,4).v, -1);
+    assert(B.size() == 24);
+    for (int i=0; (index)i < B.dim(0); ++i)
+      for (int j = 0; (index)j < B.dim(1); ++j)
+        for (int k = 0; (index)k < B.dim(2); ++k)
+          assert(B(i,j,k) == -1);
+    
   }
 
 }

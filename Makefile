@@ -1,5 +1,5 @@
-#CXX=g++
-CXX=clang++
+CXX=g++
+#CXX=clang++
 CPPFLAGS=-g3 -gdwarf-2 -Wall -std=c++98 -Wextra -DDEBUG -I. -pedantic
 
 test: test.cpp Array/array.hpp Makefile

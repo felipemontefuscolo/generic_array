@@ -579,6 +579,7 @@ public:
   const_reference access_check(size_type i) const
   { return P_MemBlock::at(i);}
 
+
 protected:
   // vecotr with rank sizes
   size_type* rdims()
@@ -678,6 +679,14 @@ public:
     this->resize(new_size);
   }
 
+  void clear()
+  {
+    Base0::clear();
+    for (int i=0; i<Rank; ++i)
+    {
+      Base0::m_rdims[i] = 0;
+    }
+  }
 
 #define MA_IMPLEMENT_FUN(n_args)                                                                       \
   Array(MA_EXPAND_ARGS(n_args, size_type))                                                             \
@@ -819,6 +828,15 @@ public:
     }
 
     this->resize(new_size);
+  }
+  
+  void clear()
+  {
+    m_size = 0;
+    for(int i=0; i<Rank; ++i)
+    {
+      m_rdims[i] = 0;
+    }
   }
 
 
