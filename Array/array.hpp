@@ -12,8 +12,23 @@
 #include "listify.hpp"
 #include <vector>
 #include <stdexcept>
-#include <tr1/type_traits>
 
+#include <ciso646>  // detect std::lib
+#ifdef _LIBCPP_VERSION
+// using libc++
+#define MULTI_HAVE_TYPE_TRAITS
+#else
+// using libstdc++
+#define MULTI_HAVE_TR1_TYPE_TRAITS
+#endif
+
+#ifdef MULTI_HAVE_TYPE_TRAITS
+#include <type_traits>
+namespace Tr1 = std;
+#else
+#include <tr1/type_traits>
+namespace Tr1 = std::tr1;
+#endif
 
 namespace marray {
 
@@ -330,7 +345,7 @@ struct Proxy<0, Rank, void, S>
 	explicit Proxy(std::size_t* v, S a_) : ids(v), a(a_)
 	{ }
 
-  typedef typename std::tr1::remove_reference<S>::type S_no_ref;
+  typedef typename Tr1::remove_reference<S>::type S_no_ref;
 
   typedef typename GetRef<S>::type type;
 
@@ -349,7 +364,7 @@ struct Proxy<0, Rank, VecT, S>
 	explicit Proxy(std::size_t i, S a_) : a(a_)
 	{ ids[0] = i;	}
 
-  typedef typename std::tr1::remove_reference<S>::type S_no_ref;
+  typedef typename Tr1::remove_reference<S>::type S_no_ref;
 
   typedef typename GetRef<S>::type type;
 
@@ -747,7 +762,7 @@ class Array<P_type, P_rank, P_opts, P_MemBlock, true> : public ArrayBase< Array<
   template<class T>
   struct ERROR_INCOMPATIBLE_TYPE_AND_STORAGE_TYPE<T,true> {};
 
-  enum { Dummy1 = sizeof(ERROR_INCOMPATIBLE_TYPE_AND_STORAGE_TYPE<Array, std::tr1::is_same<P_type,typename std::tr1::remove_extent<P_MemBlock>::type>::value>) };
+  enum { Dummy1 = sizeof(ERROR_INCOMPATIBLE_TYPE_AND_STORAGE_TYPE<Array, Tr1::is_same<P_type,typename Tr1::remove_extent<P_MemBlock>::type>::value>) };
 
 
 public:
